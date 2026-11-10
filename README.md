@@ -41,9 +41,10 @@ During development the dev server proxies `/api`, `/uploads`, `/sitemap.xml` and
 | `API_INTERNAL_URL` | Loopback API origin used by SSR fetching and the proxy | `http://127.0.0.1:3000` |
 | `PUBLIC_ORIGIN` | Canonical/OG origin emitted during SSR | request origin |
 | `ALLOWED_HOSTS` | Comma-separated hosts accepted by Angular SSR | `localhost,127.0.0.1` |
-| `PUBLIC_SITE_URL` | Origin used for sitemap/robots links | `http://localhost:4200` |
 
-Set `PUBLIC_ORIGIN` and `PUBLIC_SITE_URL` to the public domain in production and put a reverse proxy in front of the SSR port. Admin, account and auth routes render client-side; public pages render on the server with full metadata.
+Set `PUBLIC_ORIGIN` to the public domain in production and put a reverse proxy in front of the SSR port. Admin, account and auth routes render client-side; public pages render on the server with full metadata.
+
+Production instructions: [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## Features
 
