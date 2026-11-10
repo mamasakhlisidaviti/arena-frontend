@@ -1,0 +1,348 @@
+<section class="space-y-6">
+  <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">
+        {{ 'misc.organizerPortal' | translate }}
+      </p>
+      <h1 class="mt-1 text-2xl font-extrabold tracking-tight text-ink">
+        {{ 'admin.tournamentsTitle' | translate }}
+      </h1>
+      <p class="mt-1 text-sm text-muted">{{ 'admin.tournamentsSubtitle' | translate }}</p>
+    </div>
+    <a
+      routerLink="/admin/tournaments/new"
+      class="inline-flex items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-brand-600"
+    >
+      <i class="pi pi-plus text-xs" aria-hidden="true"></i>
+      {{ 'admin.newTournament' | translate }}
+    </a>
+  </header>
+
+  <div class="surface-card flex flex-col gap-3 p-4 lg:flex-row lg:items-center">
+    <div class="relative flex-1">
+      <i
+        class="pi pi-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted"
+        aria-hidden="true"
+      ></i>
+      <input
+        type="search"
+        [formControl]="filterForm.controls.q"
+        [placeholder]="'tournaments.searchPlaceholder' | translate"
+        class="w-full rounded-lg border border-line bg-surface-2 py-2.5 pl-9 pr-3 text-sm text-ink outline-none transition-colors placeholder:text-muted focus:border-brand/50"
+        [attr.aria-label]="'common.search' | translate"
+      />
+    </div>
+
+    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:w-auto lg:grid-cols-2">
+      <p-select
+        [formControl]="filterForm.controls.status"
+        [options]="statusOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [placeholder]="'admin.statusFilter' | translate"
+        [showClear]="true"
+        appendTo="body"
+        styleClass="w-full lg:w-44"
+      />
+      <p-select
+        [formControl]="filterForm.controls.category"
+        [options]="categoryOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [placeholder]="'wizard.category' | translate"
+        [showClear]="true"
+        appendTo="body"
+        styleClass="w-full lg:w-48"
+      />
+    </div>
+
+    <div class="flex items-center gap-2">
+      @if (hasFilters()) {
+        <button
+          type="button"
+          class="inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-2.5 text-[12px] font-semibold text-muted transition-colors hover:text-ink"
+          (click)="clearFilters()"
+        >
+          <i class="pi pi-filter-slash text-[11px]" aria-hidden="true"></i>
+          {{ 'common.clearFilters' | translate }}
+        </button>
+      }
+      <button
+        type="button"
+        class="inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-2.5 text-[12px] font-semibold text-ink transition-colors hover:border-brand/40 hover:text-brand disabled:opacity-60"
+        [disabled]="loading()"
+        (click)="refresh()"
+      >
+        <i class="pi pi-refresh text-[11px]" [class.animate-spin]="loading()" aria-hidden="true"></i>
+        {{ 'common.retry' | translate }}
+      </button>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="surface-card px-6 py-14 text-center">
+      <i class="pi pi-exclamation-triangle text-3xl text-rose-500" aria-hidden="true"></i>
+      <h2 class="mt-3 text-lg font-bold text-ink">{{ 'errors.loadFailed' | translate }}</h2>
+      <button
+        type="button"
+        class="mt-4 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-600"
+        (click)="refresh()"
+      >
+        {{ 'common.retry' | translate }}
+      </button>
+    </div>
+  } @else if (loading() && items().length === 0) {
+    <div class="surface-card divide-y divide-line">
+      @for (row of [1, 2, 3, 4, 5]; track row) {
+        <div class="flex animate-pulse items-center gap-4 p-4">
+          <div class="h-12 w-16 rounded-lg bg-surface-2"></div>
+          <div class="flex-1 space-y-2">
+            <div class="h-3 w-1/3 rounded bg-surface-2"></div>
+            <div class="h-2.5 w-1/4 rounded bg-surface-2"></div>
+          </div>
+          <div class="h-6 w-20 rounded-full bg-surface-2"></div>
+        </div>
+      }
+    </div>
+  } @else if (items().length === 0) {
+    <div class="surface-card">
+      <app-empty-state
+        icon="pi pi-flag"
+        titleKey="admin.tournamentsTitle"
+        [textKey]="hasFilters() ? 'admin.noTournaments' : 'admin.tournamentsSubtitle'"
+        actionKey="admin.newTournament"
+        actionLink="/admin/tournaments/new"
+      />
+    </div>
+  } @else {
+    <div class="surface-card overflow-hidden" [class.opacity-60]="loading()">
+      <div class="hidden overflow-x-auto lg:block">
+        <table class="w-full min-w-[58rem] text-left text-sm">
+          <thead class="border-b border-line bg-surface-2/60">
+            <tr class="text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
+              <th class="px-5 py-3 font-semibold">{{ 'common.details' | translate }}</th>
+              <th class="hidden px-4 py-3 font-semibold 2xl:table-cell">{{ 'wizard.category' | translate }}</th>
+              <th class="px-4 py-3 font-semibold">{{ 'wizard.startDate' | translate }}</th>
+              <th class="px-4 py-3 font-semibold">{{ 'common.status' | translate }}</th>
+              <th class="px-4 py-3 font-semibold">{{ 'common.capacity' | translate }}</th>
+              <th class="px-4 py-3 font-semibold">{{ 'wizard.entryFee' | translate }}</th>
+              <th class="sticky right-0 z-10 border-l border-line bg-surface-2 px-5 py-3 text-right font-semibold">{{ 'common.actions' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-line">
+            @for (tournament of items(); track tournament.id) {
+              <tr class="align-middle transition-colors hover:bg-surface-2/50">
+                <td class="px-5 py-3.5">
+                  <div class="flex items-center gap-3">
+                    <div class="h-11 w-14 shrink-0 overflow-hidden rounded-lg bg-surface-2">
+                      @if (tournament.coverImage?.url; as coverUrl) {
+                        <img
+                          [src]="coverUrl"
+                          [alt]="title(tournament)"
+                          class="h-full w-full object-cover"
+                          loading="lazy"
+                        />
+                      } @else {
+                        <span class="grid h-full w-full place-items-center text-lg text-brand/40" aria-hidden="true">♞</span>
+                      }
+                    </div>
+                    <div class="min-w-0">
+                      <div class="flex items-center gap-2">
+                        <a
+                          [routerLink]="
+                            tournament.status === 'draft'
+                              ? ['/admin/tournaments', tournament.id, 'edit']
+                              : ['/tournaments', tournament.slug]
+                          "
+                          class="line-clamp-1 max-w-[18rem] font-semibold text-ink transition-colors hover:text-brand"
+                          >{{ title(tournament) }}</a
+                        >
+                        @if (tournament.isFeatured) {
+                          <span class="rounded-full bg-gold-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-gold-600">
+                            {{ 'misc.featured' | translate }}
+                          </span>
+                        }
+                      </div>
+                      <p class="mt-0.5 truncate text-[11px] text-muted">
+                        {{ tournament.isOnline ? ('common.online' | translate) : tournament.location.city }}
+                        <span aria-hidden="true">·</span>
+                        {{ tournament.slug }}
+                      </p>
+                    </div>
+                  </div>
+                </td>
+                <td class="hidden px-4 py-3.5 text-[13px] text-muted 2xl:table-cell">{{ categoryName(tournament) }}</td>
+                <td class="px-4 py-3.5">
+                  <p class="text-[13px] font-medium text-ink">{{ tournament.startDate | localDate: 'date' }}</p>
+                  <p class="text-[11px] text-muted">{{ 'wizard.registrationDeadline' | translate }}: {{ tournament.registrationDeadline | localDate: 'date' }}</p>
+                </td>
+                <td class="px-4 py-3.5">
+                  <app-status-badge [status]="tournament.status" />
+                </td>
+                <td class="px-4 py-3.5">
+                  <p class="text-[12px] font-semibold text-ink">{{ tournament.currentParticipants }} / {{ tournament.participantLimit }}</p>
+                  <div class="mt-1.5 h-1 w-24 overflow-hidden rounded-full bg-surface-2">
+                    <div class="h-full rounded-full bg-brand" [style.width.%]="fillPercent(tournament)"></div>
+                  </div>
+                </td>
+                <td class="px-4 py-3.5 text-[13px] font-medium text-ink">
+                  @if (tournament.entryFee > 0) {
+                    {{ tournament.entryFee | money: tournament.currency }}
+                  } @else {
+                    {{ 'common.free' | translate }}
+                  }
+                </td>
+                <td class="sticky right-0 border-l border-line bg-surface px-5 py-3.5">
+                  <div class="flex items-center justify-end gap-1">
+                    <a
+                      [routerLink]="['/admin/tournaments', tournament.id, 'participants']"
+                      class="grid h-8 w-8 place-items-center rounded-lg text-muted transition-colors hover:bg-surface-2 hover:text-brand"
+                      [title]="'admin.participants' | translate"
+                      [attr.aria-label]="'admin.participants' | translate"
+                    >
+                      <i class="pi pi-users text-sm" aria-hidden="true"></i>
+                    </a>
+                    <a
+                      [routerLink]="['/admin/tournaments', tournament.id, 'edit']"
+                      class="grid h-8 w-8 place-items-center rounded-lg text-muted transition-colors hover:bg-surface-2 hover:text-brand"
+                      [title]="'common.edit' | translate"
+                      [attr.aria-label]="'common.edit' | translate"
+                    >
+                      <i class="pi pi-pen-to-square text-sm" aria-hidden="true"></i>
+                    </a>
+                    @if (canPublish(tournament)) {
+                      <button
+                        type="button"
+                        class="grid h-8 w-8 place-items-center rounded-lg text-muted transition-colors hover:bg-surface-2 hover:text-brand"
+                        [title]="(tournament.status === 'published' ? 'common.unpublish' : 'common.publish') | translate"
+                        [attr.aria-label]="(tournament.status === 'published' ? 'common.unpublish' : 'common.publish') | translate"
+                        (click)="togglePublish(tournament)"
+                      >
+                        <i
+                          [class]="tournament.status === 'published' ? 'pi pi-cloud-download text-sm' : 'pi pi-cloud-upload text-sm'"
+                          aria-hidden="true"
+                        ></i>
+                      </button>
+                    }
+                    <button
+                      type="button"
+                      class="grid h-8 w-8 place-items-center rounded-lg text-muted transition-colors hover:bg-surface-2 hover:text-brand"
+                      [title]="'common.duplicate' | translate"
+                      [attr.aria-label]="'common.duplicate' | translate"
+                      (click)="duplicate(tournament)"
+                    >
+                      <i class="pi pi-copy text-sm" aria-hidden="true"></i>
+                    </button>
+                    <button
+                      type="button"
+                      class="grid h-8 w-8 place-items-center rounded-lg text-muted transition-colors hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40"
+                      [title]="'common.delete' | translate"
+                      [attr.aria-label]="'common.delete' | translate"
+                      (click)="remove(tournament)"
+                    >
+                      <i class="pi pi-trash text-sm" aria-hidden="true"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <ul class="divide-y divide-line lg:hidden">
+        @for (tournament of items(); track tournament.id) {
+          <li class="p-4">
+            <div class="flex gap-3">
+              <div class="h-16 w-20 shrink-0 overflow-hidden rounded-lg bg-surface-2">
+                @if (tournament.coverImage?.url; as coverUrl) {
+                  <img [src]="coverUrl" [alt]="title(tournament)" class="h-full w-full object-cover" loading="lazy" />
+                } @else {
+                  <span class="grid h-full w-full place-items-center text-xl text-brand/40" aria-hidden="true">♞</span>
+                }
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-start justify-between gap-2">
+                  <a
+                    [routerLink]="
+                      tournament.status === 'draft'
+                        ? ['/admin/tournaments', tournament.id, 'edit']
+                        : ['/tournaments', tournament.slug]
+                    "
+                    class="line-clamp-2 text-[13px] font-semibold text-ink hover:text-brand"
+                    >{{ title(tournament) }}</a
+                  >
+                  <app-status-badge [status]="tournament.status" />
+                </div>
+                <p class="mt-1 text-[11px] text-muted">
+                  {{ tournament.startDate | localDate: 'date' }}
+                  <span aria-hidden="true">·</span>
+                  {{ categoryName(tournament) }}
+                </p>
+                <p class="mt-1 text-[11px] text-muted">
+                  {{ tournament.currentParticipants }} / {{ tournament.participantLimit }} {{ 'common.participants' | translate }}
+                </p>
+              </div>
+            </div>
+            <div class="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
+              <a
+                [routerLink]="['/admin/tournaments', tournament.id, 'participants']"
+                class="inline-flex items-center gap-1.5 rounded-lg border border-line px-2.5 py-1.5 text-[11px] font-semibold text-ink hover:border-brand/40 hover:text-brand"
+              >
+                <i class="pi pi-users text-[10px]" aria-hidden="true"></i>
+                {{ 'admin.participants' | translate }}
+              </a>
+              <a
+                [routerLink]="['/admin/tournaments', tournament.id, 'edit']"
+                class="inline-flex items-center gap-1.5 rounded-lg border border-line px-2.5 py-1.5 text-[11px] font-semibold text-ink hover:border-brand/40 hover:text-brand"
+              >
+                <i class="pi pi-pen-to-square text-[10px]" aria-hidden="true"></i>
+                {{ 'common.edit' | translate }}
+              </a>
+              @if (canPublish(tournament)) {
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1.5 rounded-lg border border-line px-2.5 py-1.5 text-[11px] font-semibold text-ink hover:border-brand/40 hover:text-brand"
+                  (click)="togglePublish(tournament)"
+                >
+                  <i class="pi pi-cloud-upload text-[10px]" aria-hidden="true"></i>
+                  {{ (tournament.status === 'published' ? 'common.unpublish' : 'common.publish') | translate }}
+                </button>
+              }
+              <div class="ml-auto flex items-center gap-1">
+                <button
+                  type="button"
+                  class="grid h-8 w-8 place-items-center rounded-lg text-muted hover:bg-surface-2 hover:text-brand"
+                  [attr.aria-label]="'common.duplicate' | translate"
+                  (click)="duplicate(tournament)"
+                >
+                  <i class="pi pi-copy text-sm" aria-hidden="true"></i>
+                </button>
+                <button
+                  type="button"
+                  class="grid h-8 w-8 place-items-center rounded-lg text-muted hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40"
+                  [attr.aria-label]="'common.delete' | translate"
+                  (click)="remove(tournament)"
+                >
+                  <i class="pi pi-trash text-sm" aria-hidden="true"></i>
+                </button>
+              </div>
+            </div>
+          </li>
+        }
+      </ul>
+    </div>
+
+    @if (meta().totalPages > 1) {
+      <div class="flex justify-center">
+        <p-paginator
+          [first]="(meta().page - 1) * meta().limit"
+          [rows]="meta().limit"
+          [totalRecords]="meta().total"
+          [pageLinkSize]="5"
+          (onPageChange)="onPage($event)"
+        />
+      </div>
+    }
+  }
+</section>

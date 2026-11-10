@@ -1,0 +1,271 @@
+<header class="sticky top-0 z-40 border-b border-line bg-bg/85 backdrop-blur-xl">
+  <div class="container-page flex h-16 items-center justify-between gap-4">
+    <div class="flex items-center gap-6">
+      <app-logo />
+      <nav class="hidden items-center gap-5 xl:flex" [attr.aria-label]="'nav.primaryNav' | translate">
+        <a
+          routerLink="/"
+          routerLinkActive="nav-active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          class="nav-link"
+          >{{ 'nav.home' | translate }}</a
+        >
+        <a routerLink="/tournaments" routerLinkActive="nav-active" class="nav-link">{{
+          'nav.tournaments' | translate
+        }}</a>
+        <a routerLink="/" fragment="categories" class="nav-link">{{ 'nav.categories' | translate }}</a>
+        <a routerLink="/" fragment="how-it-works" class="nav-link">{{ 'nav.howItWorks' | translate }}</a>
+        <a routerLink="/" fragment="benefits" class="nav-link">{{ 'nav.benefits' | translate }}</a>
+      </nav>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <div class="hidden items-center gap-2 md:flex">
+        <app-theme-switcher />
+        <app-lang-switcher />
+      </div>
+
+      @if (user(); as account) {
+        @if (unread() > 0) {
+          <a
+            routerLink="/account"
+            fragment="notifications"
+            class="relative grid h-9 w-9 place-items-center rounded-lg border border-line text-muted transition-colors hover:text-ink"
+            [attr.aria-label]="'common.notifications' | translate"
+          >
+            <i class="pi pi-bell text-sm" aria-hidden="true"></i>
+            <span
+              class="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-brand px-1 text-[9px] font-bold text-white"
+              >{{ unread() > 9 ? '9+' : unread() }}</span
+            >
+          </a>
+        }
+        @if (isAdmin()) {
+          <a
+            routerLink="/admin/dashboard"
+            class="hidden items-center gap-1.5 rounded-lg border border-line px-3 py-2 text-[13px] font-semibold text-ink transition-colors hover:border-brand/40 hover:text-brand sm:inline-flex"
+          >
+            <i class="pi pi-th-large text-xs" aria-hidden="true"></i>
+            {{ 'nav.adminPanel' | translate }}
+          </a>
+        }
+        <a
+          routerLink="/account"
+          class="flex items-center gap-2 rounded-lg py-1 pl-1 pr-2 transition-colors hover:bg-surface-2"
+          [title]="account.firstName + ' ' + account.lastName"
+        >
+          <app-user-avatar
+            size="sm"
+            [firstName]="account.firstName"
+            [lastName]="account.lastName"
+            [imageUrl]="account.avatar?.url"
+          />
+          <span class="sr-only">{{ account.firstName }} {{ account.lastName }}</span>
+        </a>
+        <button
+          type="button"
+          class="hidden h-9 w-9 place-items-center rounded-lg text-muted transition-colors hover:bg-surface-2 hover:text-ink sm:grid"
+          [attr.aria-label]="'common.logout' | translate"
+          [title]="'common.logout' | translate"
+          (click)="logout()"
+        >
+          <i class="pi pi-sign-out text-sm" aria-hidden="true"></i>
+        </button>
+      } @else {
+        <a
+          routerLink="/login"
+          class="hidden rounded-lg px-3 py-2 text-[13px] font-semibold text-ink transition-colors hover:text-brand sm:inline-flex"
+          >{{ 'nav.signIn' | translate }}</a
+        >
+        <a
+          routerLink="/register"
+          class="hidden items-center gap-1.5 rounded-lg bg-brand px-3.5 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-brand-600 sm:inline-flex"
+          >{{ 'nav.createAccount' | translate }}</a
+        >
+      }
+
+      <button
+        type="button"
+        class="grid h-9 w-9 place-items-center rounded-lg border border-line text-ink transition-colors hover:bg-surface-2 xl:hidden"
+        [attr.aria-label]="'nav.menu' | translate"
+        (click)="mobileOpen.set(true)"
+      >
+        <i class="pi pi-bars" aria-hidden="true"></i>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main-content">
+  <router-outlet />
+</main>
+
+<footer class="mt-20 border-t border-line bg-surface">
+  <div class="container-page grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="max-w-sm">
+      <app-logo />
+      <p class="mt-4 text-sm leading-6 text-muted">{{ 'footer.description' | translate }}</p>
+      <div class="mt-5 flex items-center gap-2">
+        @if (settings()?.socialLinks?.facebook) {
+          <a
+            [href]="settings()!.socialLinks.facebook"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="grid h-9 w-9 place-items-center rounded-lg border border-line text-muted transition-colors hover:border-brand/40 hover:text-brand"
+            aria-label="Facebook"
+            ><i class="pi pi-facebook" aria-hidden="true"></i
+          ></a>
+        }
+        @if (settings()?.socialLinks?.instagram) {
+          <a
+            [href]="settings()!.socialLinks.instagram"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="grid h-9 w-9 place-items-center rounded-lg border border-line text-muted transition-colors hover:border-brand/40 hover:text-brand"
+            aria-label="Instagram"
+            ><i class="pi pi-instagram" aria-hidden="true"></i
+          ></a>
+        }
+        @if (settings()?.socialLinks?.youtube) {
+          <a
+            [href]="settings()!.socialLinks.youtube"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="grid h-9 w-9 place-items-center rounded-lg border border-line text-muted transition-colors hover:border-brand/40 hover:text-brand"
+            aria-label="YouTube"
+            ><i class="pi pi-youtube" aria-hidden="true"></i
+          ></a>
+        }
+      </div>
+    </div>
+
+    <div>
+      <h3 class="text-xs font-bold uppercase tracking-[0.14em] text-muted">
+        {{ 'footer.explore' | translate }}
+      </h3>
+      <ul class="mt-4 space-y-2.5 text-sm">
+        <li><a routerLink="/tournaments" class="text-muted transition-colors hover:text-brand">{{ 'nav.tournaments' | translate }}</a></li>
+        <li><a routerLink="/" fragment="categories" class="text-muted transition-colors hover:text-brand">{{ 'nav.categories' | translate }}</a></li>
+        <li><a routerLink="/" fragment="how-it-works" class="text-muted transition-colors hover:text-brand">{{ 'nav.howItWorks' | translate }}</a></li>
+        <li><a routerLink="/" fragment="benefits" class="text-muted transition-colors hover:text-brand">{{ 'nav.benefits' | translate }}</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <h3 class="text-xs font-bold uppercase tracking-[0.14em] text-muted">
+        {{ 'footer.forOrganizers' | translate }}
+      </h3>
+      <ul class="mt-4 space-y-2.5 text-sm">
+        <li><a routerLink="/login" class="text-muted transition-colors hover:text-brand">{{ 'nav.signIn' | translate }}</a></li>
+        <li><a routerLink="/register" class="text-muted transition-colors hover:text-brand">{{ 'nav.createAccount' | translate }}</a></li>
+        <li><a routerLink="/account" class="text-muted transition-colors hover:text-brand">{{ 'nav.myAccount' | translate }}</a></li>
+        <li><a routerLink="/admin/dashboard" class="text-muted transition-colors hover:text-brand">{{ 'misc.organizerPortal' | translate }}</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <h3 class="text-xs font-bold uppercase tracking-[0.14em] text-muted">
+        {{ 'footer.contact' | translate }}
+      </h3>
+      <ul class="mt-4 space-y-2.5 text-sm text-muted">
+        @if (settings()?.contactEmail) {
+          <li>
+            <a [href]="'mailto:' + settings()!.contactEmail" class="transition-colors hover:text-brand">
+              <i class="pi pi-envelope mr-2 text-xs" aria-hidden="true"></i>{{ settings()!.contactEmail }}
+            </a>
+          </li>
+        }
+        <li>
+          <span class="inline-flex items-center gap-2">
+            <i class="pi pi-map-marker text-xs" aria-hidden="true"></i>Tbilisi, Georgia
+          </span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="border-t border-line">
+    <div
+      class="container-page flex flex-col items-center justify-between gap-2 py-5 text-[12px] text-muted sm:flex-row"
+    >
+      <p>© {{ year }} {{ siteName() }}. {{ 'footer.rights' | translate }}</p>
+      <p class="inline-flex items-center gap-1.5">
+        <span aria-hidden="true">♞</span>{{ 'footer.builtWith' | translate }}
+      </p>
+    </div>
+  </div>
+</footer>
+
+<p-drawer
+  [(visible)]="mobileOpen"
+  position="right"
+  styleClass="w-[19rem]"
+  [showCloseIcon]="true"
+  [ariaCloseLabel]="'nav.closeMenu' | translate"
+>
+  <app-logo class="mb-5 block" />
+
+  <nav class="flex flex-col gap-1" [attr.aria-label]="'nav.mobileNav' | translate">
+    <a routerLink="/" (click)="closeMobile()" class="rounded-lg px-3 py-2.5 text-sm font-semibold text-ink hover:bg-surface-2">{{ 'nav.home' | translate }}</a>
+    <a routerLink="/tournaments" (click)="closeMobile()" class="rounded-lg px-3 py-2.5 text-sm font-semibold text-ink hover:bg-surface-2">{{ 'nav.tournaments' | translate }}</a>
+    <a routerLink="/" fragment="categories" (click)="closeMobile()" class="rounded-lg px-3 py-2.5 text-sm font-semibold text-ink hover:bg-surface-2">{{ 'nav.categories' | translate }}</a>
+    <a routerLink="/" fragment="how-it-works" (click)="closeMobile()" class="rounded-lg px-3 py-2.5 text-sm font-semibold text-ink hover:bg-surface-2">{{ 'nav.howItWorks' | translate }}</a>
+    <a routerLink="/" fragment="benefits" (click)="closeMobile()" class="rounded-lg px-3 py-2.5 text-sm font-semibold text-ink hover:bg-surface-2">{{ 'nav.benefits' | translate }}</a>
+  </nav>
+
+  <div class="mt-5 flex items-center justify-between gap-2 border-t border-line pt-5">
+    <app-theme-switcher />
+    <app-lang-switcher />
+  </div>
+
+  <div class="mt-5 border-t border-line pt-5">
+    @if (user(); as account) {
+      <div class="flex items-center gap-3">
+        <app-user-avatar
+          size="md"
+          [firstName]="account.firstName"
+          [lastName]="account.lastName"
+          [imageUrl]="account.avatar?.url"
+        />
+        <div class="min-w-0">
+          <p class="truncate text-sm font-semibold text-ink">{{ account.firstName }} {{ account.lastName }}</p>
+          <p class="truncate text-xs text-muted">{{ account.email }}</p>
+        </div>
+      </div>
+      <div class="mt-4 grid gap-1">
+        <a routerLink="/account" (click)="closeMobile()" class="rounded-lg px-3 py-2.5 text-sm font-semibold text-ink hover:bg-surface-2">
+          <i class="pi pi-user mr-2 text-xs text-brand" aria-hidden="true"></i>{{ 'nav.myAccount' | translate }}
+        </a>
+        <a routerLink="/account" fragment="notifications" (click)="closeMobile()" class="rounded-lg px-3 py-2.5 text-sm font-semibold text-ink hover:bg-surface-2">
+          <i class="pi pi-bell mr-2 text-xs text-brand" aria-hidden="true"></i>{{ 'common.notifications' | translate }}
+          @if (unread() > 0) {
+            <span class="ml-1 rounded-full bg-brand px-1.5 text-[10px] text-white">{{ unread() }}</span>
+          }
+        </a>
+        @if (isAdmin()) {
+          <a routerLink="/admin/dashboard" (click)="closeMobile()" class="rounded-lg px-3 py-2.5 text-sm font-semibold text-ink hover:bg-surface-2">
+            <i class="pi pi-th-large mr-2 text-xs text-brand" aria-hidden="true"></i>{{ 'nav.adminPanel' | translate }}
+          </a>
+        }
+        <button type="button" class="rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-danger hover:bg-surface-2" (click)="logout()">
+          <i class="pi pi-sign-out mr-2 text-xs" aria-hidden="true"></i>{{ 'common.logout' | translate }}
+        </button>
+      </div>
+    } @else {
+      <div class="grid gap-2">
+        <a
+          routerLink="/login"
+          (click)="closeMobile()"
+          class="flex w-full items-center justify-center rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-600"
+          >{{ 'nav.signIn' | translate }}</a
+        >
+        <a
+          routerLink="/register"
+          (click)="closeMobile()"
+          class="flex w-full items-center justify-center rounded-lg border border-line px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:border-brand/40 hover:text-brand"
+          >{{ 'nav.createAccount' | translate }}</a
+        >
+      </div>
+    }
+  </div>
+</p-drawer>

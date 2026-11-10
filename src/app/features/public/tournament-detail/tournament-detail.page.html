@@ -1,0 +1,691 @@
+@if (detail(); as t) {
+  <section class="relative overflow-hidden bg-brand-900">
+    @if (coverUrl()) {
+      <img
+        [src]="coverUrl()"
+        [alt]="title()"
+        class="absolute inset-0 h-full w-full object-cover"
+      />
+    } @else {
+      <div class="absolute inset-0 bg-gradient-to-br from-brand-800 via-brand-700 to-brand-900">
+        <div
+          class="absolute -right-10 top-1/2 -translate-y-1/2 text-[22rem] leading-none text-white/[0.06]"
+          aria-hidden="true"
+        >
+          ♞
+        </div>
+      </div>
+    }
+    <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/55 to-black/30"></div>
+
+    <div class="container-page relative py-10 lg:py-16">
+      <nav class="flex flex-wrap items-center gap-2 text-[12px] font-medium text-white/60" aria-label="Breadcrumb">
+        <a routerLink="/" class="transition-colors hover:text-white">{{ 'nav.home' | translate }}</a>
+        <i class="pi pi-angle-right text-[9px]" aria-hidden="true"></i>
+        <a routerLink="/tournaments" class="transition-colors hover:text-white">{{ 'nav.tournaments' | translate }}</a>
+        <i class="pi pi-angle-right text-[9px]" aria-hidden="true"></i>
+        <span class="max-w-[18rem] truncate text-white/85">{{ title() }}</span>
+      </nav>
+
+      <div class="mt-8 flex flex-wrap items-center gap-2">
+        @if (categoryName()) {
+          <a
+            [routerLink]="['/tournaments']"
+            [queryParams]="{ category: category()?.slug }"
+            class="rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[11px] font-semibold text-white backdrop-blur transition-colors hover:bg-white/20"
+          >
+            {{ categoryName() }}
+          </a>
+        }
+        <app-status-badge [status]="t.status"></app-status-badge>
+        <app-status-badge [status]="availability()" [labelKey]="availabilityKey()"></app-status-badge>
+        @if (t.isFeatured) {
+          <span class="rounded-full bg-gold-500 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-900">
+            {{ 'misc.featured' | translate }}
+          </span>
+        }
+      </div>
+
+      <h1 class="mt-4 max-w-4xl text-3xl font-extrabold leading-[1.08] tracking-tight text-white sm:text-4xl lg:text-5xl">
+        {{ title() }}
+      </h1>
+
+      <div class="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 text-[13px] font-medium text-white/80">
+        <span class="inline-flex items-center gap-2">
+          <i class="pi pi-calendar text-[12px] text-gold-400" aria-hidden="true"></i>
+          {{ t.startDate | localDate: 'datetime' }}
+        </span>
+        <span class="inline-flex items-center gap-2">
+          @if (t.isOnline) {
+            <i class="pi pi-globe text-[12px] text-gold-400" aria-hidden="true"></i>
+            {{ 'tournament.onlineEvent' | translate }}
+          } @else {
+            <i class="pi pi-map-marker text-[12px] text-gold-400" aria-hidden="true"></i>
+            {{ locationLabel() }}
+          }
+        </span>
+        <span class="inline-flex items-center gap-2">
+          <i class="pi pi-users text-[12px] text-gold-400" aria-hidden="true"></i>
+          {{ t.currentParticipants }} / {{ t.participantLimit }} {{ 'common.participants' | translate }}
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <section class="container-page py-8 lg:py-12">
+    <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_21rem] lg:gap-10">
+      <div class="order-2 min-w-0 space-y-6 lg:order-1">
+        <section class="surface-card p-6">
+          <p class="eyebrow">{{ 'tournament.about' | translate }}</p>
+          <h2 class="mt-2 text-xl font-extrabold text-ink">{{ 'tournament.overview' | translate }}</h2>
+          <div class="prose-body mt-4 text-sm">
+            {{ description() || ('tournament.noDescription' | translate) }}
+          </div>
+        </section>
+
+        <section class="surface-card p-6">
+          <p class="eyebrow">{{ 'tournament.quickFacts' | translate }}</p>
+          <h2 class="mt-2 text-xl font-extrabold text-ink">{{ 'common.details' | translate }}</h2>
+
+          <dl class="mt-5 grid gap-x-6 gap-y-5 sm:grid-cols-2">
+            <div>
+              <dt class="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">{{ 'tournament.type' | translate }}</dt>
+              <dd class="mt-1 text-sm font-semibold text-ink">{{ typeLabel() || '—' }}</dd>
+            </div>
+            <div>
+              <dt class="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">{{ 'tournament.format' | translate }}</dt>
+              <dd class="mt-1 text-sm font-semibold text-ink">{{ formatLabel() || '—' }}</dd>
+            </div>
+            @if (rounds()) {
+              <div>
+                <dt class="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">{{ 'tournament.rounds' | translate }}</dt>
+                <dd class="mt-1 text-sm font-semibold text-ink">{{ rounds() }}</dd>
+              </div>
+            }
+            @if (timeControl()) {
+              <div>
+                <dt class="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">{{ 'tournament.timeControl' | translate }}</dt>
+                <dd class="mt-1 text-sm font-semibold text-ink">{{ timeControl() }}</dd>
+              </div>
+            }
+            <div>
+              <dt class="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">{{ 'tournament.entryFee' | translate }}</dt>
+              <dd class="mt-1 text-sm font-semibold text-ink">
+                @if (t.entryFee > 0) {
+                  {{ t.entryFee | money: t.currency }}
+                } @else {
+                  {{ 'common.free' | translate }}
+                }
+              </dd>
+            </div>
+            @if (t.prizePool) {
+              <div>
+                <dt class="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">{{ 'tournament.prizePool' | translate }}</dt>
+                <dd class="mt-1 text-sm font-semibold text-ink">{{ t.prizePool | money: t.currency }}</dd>
+              </div>
+            }
+            <div>
+              <dt class="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">{{ 'tournament.capacity' | translate }}</dt>
+              <dd class="mt-1 text-sm font-semibold text-ink">
+                {{ t.currentParticipants }} / {{ t.participantLimit }}
+                <span class="ml-1 text-[12px] font-medium text-muted">
+                  ({{ 'tournament.seatsLeft' | translate: { count: remaining() } }})
+                </span>
+              </dd>
+            </div>
+            <div>
+              <dt class="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">{{ 'tournament.location' | translate }}</dt>
+              <dd class="mt-1 text-sm font-semibold text-ink">
+                @if (t.isOnline) {
+                  {{ 'tournament.onlineEvent' | translate }}
+                } @else {
+                  {{ locationLabel() }}
+                  @if (t.location.address) {
+                    <span class="block text-[12px] font-medium text-muted">{{ t.location.address }}</span>
+                  }
+                }
+              </dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="surface-card p-6">
+          <p class="eyebrow">{{ 'tournament.schedule' | translate }}</p>
+          <h2 class="mt-2 text-xl font-extrabold text-ink">{{ 'tournament.schedule' | translate }}</h2>
+
+          <ol class="mt-6 space-y-6 border-l border-line pl-6">
+            <li class="relative">
+              <span class="absolute -left-[1.95rem] grid h-6 w-6 place-items-center rounded-full border border-line bg-surface text-[10px] text-brand">
+                <i class="pi pi-pen-to-square" aria-hidden="true"></i>
+              </span>
+              <p class="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">{{ 'tournament.deadline' | translate }}</p>
+              <p class="mt-1 text-sm font-semibold text-ink">{{ t.registrationDeadline | localDate: 'datetime' }}</p>
+            </li>
+            <li class="relative">
+              <span class="absolute -left-[1.95rem] grid h-6 w-6 place-items-center rounded-full border border-line bg-surface text-[10px] text-brand">
+                <i class="pi pi-play" aria-hidden="true"></i>
+              </span>
+              <p class="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">{{ 'tournament.starts' | translate }}</p>
+              <p class="mt-1 text-sm font-semibold text-ink">{{ t.startDate | localDate: 'datetime' }}</p>
+            </li>
+            @if (t.endDate) {
+              <li class="relative">
+                <span class="absolute -left-[1.95rem] grid h-6 w-6 place-items-center rounded-full border border-line bg-surface text-[10px] text-brand">
+                  <i class="pi pi-flag" aria-hidden="true"></i>
+                </span>
+                <p class="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">{{ 'tournament.ends' | translate }}</p>
+                <p class="mt-1 text-sm font-semibold text-ink">{{ t.endDate | localDate: 'datetime' }}</p>
+              </li>
+            }
+          </ol>
+        </section>
+
+        @if (t.prizePool || prizesText()) {
+          <section class="surface-card overflow-hidden">
+            <div class="flex items-start gap-4 border-b border-line bg-gold-500/[0.07] p-6">
+              <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gold-500/15 text-lg text-gold-600">
+                <i class="pi pi-trophy" aria-hidden="true"></i>
+              </span>
+              <div>
+                <p class="eyebrow text-gold-600">{{ 'tournament.prizes' | translate }}</p>
+                <h2 class="mt-1 text-xl font-extrabold text-ink">
+                  {{ 'tournament.prizePool' | translate }}
+                  @if (t.prizePool) {
+                    <span class="ml-2 text-gold-600">{{ t.prizePool | money: t.currency }}</span>
+                  }
+                </h2>
+              </div>
+            </div>
+            @if (prizesText()) {
+              <div class="prose-body p-6 text-sm">{{ prizesText() }}</div>
+            }
+          </section>
+        }
+
+        <section class="surface-card p-6">
+          <p class="eyebrow">{{ 'tournament.rules' | translate }}</p>
+          <h2 class="mt-2 text-xl font-extrabold text-ink">{{ 'tournament.rules' | translate }}</h2>
+          <div class="prose-body mt-4 text-sm">
+            {{ rulesText() || ('tournament.noRules' | translate) }}
+          </div>
+        </section>
+
+        @if (t.contact?.name || t.contact?.email || t.contact?.phone) {
+          <section class="surface-card p-6">
+            <p class="eyebrow">{{ 'tournament.contactInfo' | translate }}</p>
+            <h2 class="mt-2 text-xl font-extrabold text-ink">{{ 'tournament.contactInfo' | translate }}</h2>
+            <div class="mt-5 grid gap-4 sm:grid-cols-3">
+              @if (t.contact!.name) {
+                <div>
+                  <p class="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">{{ 'tournament.contactName' | translate }}</p>
+                  <p class="mt-1 text-sm font-semibold text-ink">{{ t.contact!.name }}</p>
+                </div>
+              }
+              @if (t.contact!.email) {
+                <div>
+                  <p class="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">{{ 'tournament.contactEmail' | translate }}</p>
+                  <a [href]="'mailto:' + t.contact!.email" class="mt-1 block break-all text-sm font-semibold text-brand hover:underline">
+                    {{ t.contact!.email }}
+                  </a>
+                </div>
+              }
+              @if (t.contact!.phone) {
+                <div>
+                  <p class="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">{{ 'tournament.contactPhone' | translate }}</p>
+                  <a [href]="'tel:' + t.contact!.phone" class="mt-1 block text-sm font-semibold text-brand hover:underline">
+                    {{ t.contact!.phone }}
+                  </a>
+                </div>
+              }
+            </div>
+          </section>
+        }
+
+        <section id="register" class="surface-card scroll-mt-24 p-6">
+          <p class="eyebrow">{{ 'tournament.registration' | translate }}</p>
+          <h2 class="mt-2 text-xl font-extrabold text-ink">{{ 'tournament.registerSectionTitle' | translate }}</h2>
+          <p class="mt-2 text-sm leading-6 text-muted">{{ 'tournament.registerSectionText' | translate }}</p>
+
+          @if (registrationResult(); as registration) {
+            <div class="mt-6 overflow-hidden rounded-xl border border-brand/25 bg-brand-soft/60">
+              <div class="flex flex-wrap items-start justify-between gap-3 p-5">
+                <div>
+                  <p class="text-sm font-bold text-brand">{{ resultTitleKey() | translate }}</p>
+                  <p class="mt-1 max-w-lg text-[13px] leading-6 text-muted">
+                    {{ resultTextKey() | translate: { number: registration.registrationNumber } }}
+                  </p>
+                </div>
+                <app-status-badge [status]="registration.status"></app-status-badge>
+              </div>
+              <div class="flex flex-wrap items-center gap-3 border-t border-brand/15 bg-surface/60 px-5 py-3.5">
+                <span class="inline-flex items-center gap-2 rounded-lg border border-line bg-surface px-3 py-1.5">
+                  <i class="pi pi-ticket text-[11px] text-brand" aria-hidden="true"></i>
+                  <span class="font-mono text-[12px] font-bold tracking-wide text-ink">{{ registration.registrationNumber }}</span>
+                </span>
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1.5 text-[12px] font-semibold text-brand hover:underline"
+                  (click)="copyRegistrationNumber()"
+                >
+                  <i class="pi pi-copy text-[10px]" aria-hidden="true"></i>
+                  {{ 'common.copy' | translate }}
+                </button>
+                @if (t.registrationSettings.allowSelfCancellation) {
+                  <button
+                    type="button"
+                    class="ml-auto inline-flex items-center gap-1.5 text-[12px] font-semibold text-danger hover:underline"
+                    (click)="cancelRegistration()"
+                  >
+                    <i class="pi pi-times-circle text-[10px]" aria-hidden="true"></i>
+                    {{ 'tournament.cancelRegistration' | translate }}
+                  </button>
+                }
+              </div>
+            </div>
+          } @else if (!canRegisterNow()) {
+            <div class="mt-6 flex items-start gap-3 rounded-xl border border-line bg-surface-2 p-5">
+              <i class="pi pi-info-circle mt-0.5 text-brand" aria-hidden="true"></i>
+              <div>
+                <p class="text-sm font-semibold text-ink">{{ availabilityKey() | translate }}</p>
+                @if (availability() === 'full' && t.registrationSettings.allowWaitlist) {
+                  <p class="mt-1 text-[13px] text-muted">{{ 'tournament.waitlistAvailable' | translate }}</p>
+                }
+              </div>
+            </div>
+          } @else if (!user() && !t.registrationSettings.allowGuestRegistration) {
+            <div class="mt-6 rounded-xl border border-line bg-surface-2 p-5">
+              <p class="text-sm font-semibold text-ink">{{ 'tournament.loginToRegister' | translate }}</p>
+              <a
+                [routerLink]="['/login']"
+                [queryParams]="{ returnUrl: loginReturnUrl() }"
+                class="mt-3 inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-600"
+              >
+                {{ 'nav.signIn' | translate }}
+                <i class="pi pi-arrow-right text-[10px]" aria-hidden="true"></i>
+              </a>
+            </div>
+          } @else {
+            @if (availability() === 'full') {
+              <div class="mt-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] font-medium text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+                {{ 'tournament.waitlistAvailable' | translate }}
+              </div>
+            }
+
+            @if (user(); as currentUser) {
+              <p class="mt-5 flex items-center gap-2 rounded-lg border border-line bg-surface-2 px-4 py-2.5 text-[12px] font-medium text-muted">
+                <i class="pi pi-user-edit text-brand" aria-hidden="true"></i>
+                {{ 'tournament.signedInAs' | translate: { name: userName() } }}
+              </p>
+            } @else {
+              <p class="mt-5 text-[12px] font-medium text-muted">
+                {{ 'tournament.guestNotice' | translate }}
+                <a
+                  [routerLink]="['/login']"
+                  [queryParams]="{ returnUrl: loginReturnUrl() }"
+                  class="font-semibold text-brand hover:underline"
+                  >{{ 'nav.signIn' | translate }}</a
+                >
+              </p>
+            }
+
+            <form [formGroup]="registrationForm" (ngSubmit)="submitRegistration()" class="mt-6 space-y-5" novalidate>
+              <div class="grid gap-5 sm:grid-cols-2">
+                <div>
+                  <label class="field-label" for="reg-first">{{ 'form.firstName' | translate }} *</label>
+                  <input id="reg-first" type="text" formControlName="firstName" autocomplete="given-name" class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none" />
+                  @if (fieldError('firstName'); as error) {
+                    <p class="field-error">{{ error | translate }}</p>
+                  }
+                </div>
+                <div>
+                  <label class="field-label" for="reg-last">{{ 'form.lastName' | translate }} *</label>
+                  <input id="reg-last" type="text" formControlName="lastName" autocomplete="family-name" class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none" />
+                  @if (fieldError('lastName'); as error) {
+                    <p class="field-error">{{ error | translate }}</p>
+                  }
+                </div>
+                <div>
+                  <label class="field-label" for="reg-email">{{ 'form.email' | translate }} *</label>
+                  <input id="reg-email" type="email" formControlName="email" autocomplete="email" class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none" />
+                  @if (fieldError('email'); as error) {
+                    <p class="field-error">{{ error | translate }}</p>
+                  }
+                </div>
+                <div>
+                  <label class="field-label" for="reg-phone">{{ 'form.phone' | translate }} *</label>
+                  <input id="reg-phone" type="tel" formControlName="phone" autocomplete="tel" placeholder="+995 555 123 456" class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none" />
+                  @if (fieldError('phone'); as error) {
+                    <p class="field-error">{{ error | translate }}</p>
+                  }
+                </div>
+                <div>
+                  <label class="field-label" for="reg-fide">{{ 'form.fideId' | translate }}</label>
+                  <input id="reg-fide" type="text" inputmode="numeric" formControlName="fideId" placeholder="1234567" class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none" />
+                  @if (fieldError('fideId'); as error) {
+                    <p class="field-error">{{ error | translate }}</p>
+                  }
+                </div>
+                <div>
+                  <label class="field-label" for="reg-rating">{{ 'form.rating' | translate }}</label>
+                  <input id="reg-rating" type="number" min="0" max="4000" step="1" formControlName="rating" placeholder="1800" class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none" />
+                  @if (fieldError('rating'); as error) {
+                    <p class="field-error">{{ error | translate }}</p>
+                  }
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="field-label" for="reg-club">{{ 'form.club' | translate }}</label>
+                  <input id="reg-club" type="text" formControlName="club" class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none" />
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="field-label" for="reg-notes">{{ 'form.notes' | translate }}</label>
+                  <textarea id="reg-notes" rows="3" formControlName="notes" [placeholder]="'form.notesPlaceholder' | translate" class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none"></textarea>
+                </div>
+              </div>
+
+              @if (fields().length) {
+                <div class="rounded-xl border border-line bg-surface-2/60 p-5">
+                  <p class="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">{{ 'form.additionalInfo' | translate }}</p>
+                  <div class="mt-4 grid gap-5 sm:grid-cols-2">
+                    @for (field of fields(); track field.key) {
+                      <div [class]="field.type === 'textarea' ? 'sm:col-span-2' : ''">
+                        <label class="field-label" [for]="'custom-' + field.key">
+                          {{ field.label | localized }}
+                          @if (field.required) {
+                            *
+                          }
+                        </label>
+                        @if (field.type === 'textarea') {
+                          <textarea [id]="'custom-' + field.key" rows="3" [formControlName]="field.key" class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none"></textarea>
+                        } @else if (field.type === 'select') {
+                          <select [id]="'custom-' + field.key" [formControlName]="field.key" class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none">
+                            <option value="" disabled>{{ 'common.select' | translate }}</option>
+                            @for (option of field.options ?? []; track option) {
+                              <option [value]="option">{{ option }}</option>
+                            }
+                          </select>
+                        } @else {
+                          <input
+                            [id]="'custom-' + field.key"
+                            [type]="field.type"
+                            [formControlName]="field.key"
+                            class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none"
+                          />
+                        }
+                        @if (customError(field); as error) {
+                          <p class="field-error">{{ error | translate }}</p>
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+
+              <label class="flex items-start gap-2.5 text-[13px] leading-6 text-muted">
+                <input type="checkbox" formControlName="terms" class="mt-1 h-4 w-4 rounded border-line text-brand focus:ring-brand" />
+                <span>{{ 'form.terms' | translate }}</span>
+              </label>
+              @if (fieldError('terms'); as error) {
+                <p class="field-error -mt-3">{{ error | translate }}</p>
+              }
+
+              @if (submitError(); as error) {
+                <div class="rounded-lg border border-danger/30 bg-danger/5 px-4 py-3 text-[13px] font-medium text-danger" role="alert">
+                  {{ error | translate }}
+                </div>
+              }
+
+              <div class="flex flex-wrap items-center gap-4">
+                <button
+                  type="submit"
+                  [disabled]="submitting()"
+                  class="inline-flex items-center gap-2 rounded-lg bg-brand px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  @if (submitting()) {
+                    <i class="pi pi-spin pi-spinner text-xs" aria-hidden="true"></i>
+                    {{ 'form.submitting' | translate }}
+                  } @else {
+                    <i class="pi pi-check-circle text-xs" aria-hidden="true"></i>
+                    {{ 'form.submit' | translate }}
+                  }
+                </button>
+                <p class="text-[11px] font-medium text-muted">{{ 'form.requiredHint' | translate }}</p>
+              </div>
+            </form>
+          }
+        </section>
+
+        <section class="surface-card p-6">
+          <p class="eyebrow">{{ 'tournament.statusLookup' | translate }}</p>
+          <h2 class="mt-2 text-xl font-extrabold text-ink">{{ 'tournament.statusLookup' | translate }}</h2>
+          <p class="mt-2 text-sm leading-6 text-muted">{{ 'tournament.statusLookupText' | translate }}</p>
+
+          <form [formGroup]="lookupForm" (ngSubmit)="lookupRegistration()" class="mt-5 grid gap-4 sm:grid-cols-[1fr_1fr_auto]" novalidate>
+            <div>
+              <label class="field-label" for="lookup-number">{{ 'tournament.regNumber' | translate }}</label>
+              <input id="lookup-number" type="text" formControlName="number" placeholder="CHS-2026-XXXXXXX" class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 font-mono text-sm text-ink placeholder:font-sans placeholder:text-muted focus:border-brand focus:outline-none" />
+              @if (lookupForm.controls.number.touched && lookupForm.controls.number.invalid) {
+                <p class="field-error">{{ 'validation.required' | translate }}</p>
+              }
+            </div>
+            <div>
+              <label class="field-label" for="lookup-email">{{ 'form.email' | translate }}</label>
+              <input id="lookup-email" type="email" formControlName="email" class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none" />
+              @if (lookupForm.controls.email.touched && lookupForm.controls.email.invalid) {
+                <p class="field-error">{{ 'validation.email' | translate }}</p>
+              }
+            </div>
+            <div class="flex items-end">
+              <button
+                type="submit"
+                [disabled]="lookupLoading()"
+                class="inline-flex h-[42px] w-full items-center justify-center gap-2 rounded-lg border border-line bg-surface px-4 text-[13px] font-semibold text-ink transition-colors hover:border-brand/40 hover:text-brand disabled:opacity-60 sm:w-auto"
+              >
+                @if (lookupLoading()) {
+                  <i class="pi pi-spin pi-spinner text-xs" aria-hidden="true"></i>
+                } @else {
+                  <i class="pi pi-search text-xs" aria-hidden="true"></i>
+                }
+                {{ 'tournament.lookupButton' | translate }}
+              </button>
+            </div>
+          </form>
+
+          @if (lookupError(); as error) {
+            <div class="mt-4 rounded-lg border border-line bg-surface-2 px-4 py-3 text-[13px] font-medium text-muted" role="status">
+              {{ error | translate }}
+            </div>
+          }
+
+          @if (lookupResult(); as registration) {
+            <div class="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand/25 bg-brand-soft/50 p-4">
+              <div>
+                <div class="flex items-center gap-2">
+                  <p class="font-mono text-[12px] font-bold text-ink">{{ registration.registrationNumber }}</p>
+                  <app-status-badge [status]="registration.status"></app-status-badge>
+                </div>
+                <p class="mt-1.5 text-[13px] font-medium text-muted">
+                  {{ registration.participantInformation.firstName }} {{ registration.participantInformation.lastName }}
+                  <span class="mx-1.5 text-line">•</span>
+                  {{ registration.createdAt | localDate: 'datetime' }}
+                </p>
+              </div>
+              @if (registration.status !== 'cancelled' && registration.status !== 'rejected') {
+                <span class="text-[12px] font-semibold text-brand">{{ 'tournament.lookupResult' | translate }}</span>
+              }
+            </div>
+          }
+        </section>
+      </div>
+
+      <aside class="order-1 space-y-5 lg:order-2">
+        <div class="surface-card overflow-hidden lg:sticky lg:top-24">
+          <div class="border-b border-line p-5">
+            <div class="flex items-center justify-between gap-2">
+              <app-status-badge [status]="t.status"></app-status-badge>
+              <app-status-badge [status]="availability()" [labelKey]="availabilityKey()"></app-status-badge>
+            </div>
+
+            <p class="mt-4 text-2xl font-extrabold tracking-tight text-ink">
+              @if (t.entryFee > 0) {
+                {{ t.entryFee | money: t.currency }}
+              } @else {
+                {{ 'common.free' | translate }}
+              }
+            </p>
+            <p class="text-[11px] font-medium text-muted">{{ 'tournament.entryFee' | translate }}</p>
+
+            <div class="mt-4">
+              <div class="flex items-center justify-between text-[11px] font-semibold text-muted">
+                <span>{{ t.currentParticipants }} / {{ t.participantLimit }} {{ 'common.participants' | translate }}</span>
+                <span>{{ 'tournament.seatsLeft' | translate: { count: remaining() } }}</span>
+              </div>
+              <div class="mt-1.5 h-2 overflow-hidden rounded-full bg-surface-2">
+                <div class="h-full rounded-full bg-brand transition-all" [style.width.%]="fillPercent()"></div>
+              </div>
+            </div>
+
+            <dl class="mt-5 space-y-3 text-[12px]">
+              <div class="flex items-start gap-2.5">
+                <i class="pi pi-calendar mt-0.5 text-[11px] text-brand" aria-hidden="true"></i>
+                <div>
+                  <dt class="font-semibold text-ink">{{ 'tournament.starts' | translate }}</dt>
+                  <dd class="text-muted">{{ t.startDate | localDate: 'datetime' }}</dd>
+                </div>
+              </div>
+              <div class="flex items-start gap-2.5">
+                <i class="pi pi-clock mt-0.5 text-[11px] text-brand" aria-hidden="true"></i>
+                <div>
+                  <dt class="font-semibold text-ink">{{ 'tournament.deadline' | translate }}</dt>
+                  <dd class="text-muted">{{ t.registrationDeadline | localDate: 'datetime' }}</dd>
+                </div>
+              </div>
+              <div class="flex items-start gap-2.5">
+                <i class="pi pi-map-marker mt-0.5 text-[11px] text-brand" aria-hidden="true"></i>
+                <div>
+                  <dt class="font-semibold text-ink">{{ 'tournament.location' | translate }}</dt>
+                  <dd class="text-muted">{{ t.isOnline ? ('tournament.onlineEvent' | translate) : locationLabel() }}</dd>
+                </div>
+              </div>
+            </dl>
+
+            @if (registrationResult(); as registration) {
+              <div class="mt-5 rounded-lg border border-brand/25 bg-brand-soft px-4 py-3">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-[11px] font-bold uppercase tracking-[0.08em] text-brand">{{ 'tournament.yourRegistration' | translate }}</span>
+                  <app-status-badge [status]="registration.status"></app-status-badge>
+                </div>
+                <p class="mt-1.5 font-mono text-[12px] font-bold text-ink">{{ registration.registrationNumber }}</p>
+              </div>
+            } @else if (canRegisterNow()) {
+              <a
+                href="#register"
+                class="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-brand px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-600"
+              >
+                <i class="pi pi-pen-to-square text-xs" aria-hidden="true"></i>
+                {{ availability() === 'full' ? ('tournament.joinWaitlist' | translate) : ('tournament.registerNow' | translate) }}
+              </a>
+            } @else {
+              <p class="mt-5 rounded-lg border border-line bg-surface-2 px-4 py-3 text-center text-[12px] font-semibold text-muted">
+                {{ availabilityKey() | translate }}
+              </p>
+            }
+          </div>
+
+          <ul class="space-y-2.5 p-5 text-[12px] leading-5 text-muted">
+            @if (t.registrationSettings.requiresApproval) {
+              <li class="flex items-start gap-2">
+                <i class="pi pi-shield mt-0.5 text-[10px] text-brand" aria-hidden="true"></i>
+                {{ 'tournament.requiresApproval' | translate }}
+              </li>
+            } @else {
+              <li class="flex items-start gap-2">
+                <i class="pi pi-bolt mt-0.5 text-[10px] text-brand" aria-hidden="true"></i>
+                {{ 'tournament.instantConfirmation' | translate }}
+              </li>
+            }
+            @if (t.registrationSettings.allowGuestRegistration) {
+              <li class="flex items-start gap-2">
+                <i class="pi pi-user-plus mt-0.5 text-[10px] text-brand" aria-hidden="true"></i>
+                {{ 'tournament.guestAllowed' | translate }}
+              </li>
+            }
+            @if (t.registrationSettings.allowWaitlist) {
+              <li class="flex items-start gap-2">
+                <i class="pi pi-list mt-0.5 text-[10px] text-brand" aria-hidden="true"></i>
+                {{ 'tournament.waitlistAvailable' | translate }}
+              </li>
+            }
+            @if (t.registrationSettings.allowSelfCancellation) {
+              <li class="flex items-start gap-2">
+                <i class="pi pi-replay mt-0.5 text-[10px] text-brand" aria-hidden="true"></i>
+                {{ 'tournament.selfCancellation' | translate }}
+              </li>
+            }
+          </ul>
+        </div>
+
+        @if (organizer() || organizerEmail()) {
+          <div class="surface-card p-5">
+            <p class="text-[11px] font-bold uppercase tracking-[0.1em] text-muted">{{ 'tournament.organizer' | translate }}</p>
+            <div class="mt-3 flex items-center gap-3">
+              <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-soft text-sm font-bold text-brand">
+                {{ organizer().charAt(0) || 'A' }}
+              </span>
+              <div class="min-w-0">
+                <p class="truncate text-sm font-bold text-ink">{{ organizer() || ('tournament.unknownOrganizer' | translate) }}</p>
+                @if (organizerEmail()) {
+                  <a [href]="'mailto:' + organizerEmail()" class="block truncate text-[12px] text-muted hover:text-brand">
+                    {{ organizerEmail() }}
+                  </a>
+                }
+              </div>
+            </div>
+          </div>
+        }
+
+        <div class="surface-card p-5">
+          <p class="text-[11px] font-bold uppercase tracking-[0.1em] text-muted">{{ 'common.share' | translate }}</p>
+          <button
+            type="button"
+            class="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-line px-4 py-2.5 text-[13px] font-semibold text-ink transition-colors hover:border-brand/40 hover:text-brand"
+            (click)="share()"
+          >
+            <i class="pi pi-share-alt text-xs" aria-hidden="true"></i>
+            {{ 'tournament.shareText' | translate }}
+          </button>
+        </div>
+
+        <a
+          routerLink="/tournaments"
+          class="flex items-center justify-center gap-2 text-[12px] font-semibold text-muted transition-colors hover:text-brand"
+        >
+          <i class="pi pi-arrow-left text-[10px]" aria-hidden="true"></i>
+          {{ 'common.back' | translate }}
+        </a>
+      </aside>
+    </div>
+  </section>
+} @else if (loading()) {
+  <div class="container-page py-12">
+    <div class="skeleton-block h-64 w-full"></div>
+    <div class="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_21rem]">
+      <div class="space-y-4">
+        <div class="skeleton-block h-44 w-full"></div>
+        <div class="skeleton-block h-64 w-full"></div>
+      </div>
+      <div class="skeleton-block h-96 w-full"></div>
+    </div>
+  </div>
+} @else {
+  <section class="container-page py-20">
+    <div class="surface-card">
+      <app-empty-state
+        icon="pi pi-chess-knight"
+        titleKey="tournament.notFoundTitle"
+        textKey="tournament.notFoundText"
+        actionKey="nav.browse"
+        actionLink="/tournaments"
+      />
+    </div>
+  </section>
+}

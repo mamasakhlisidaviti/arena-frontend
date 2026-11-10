@@ -1,0 +1,342 @@
+@if (user(); as currentUser) {
+  <section class="relative overflow-hidden border-b border-line bg-surface">
+    <div class="hero-pattern"></div>
+    <div class="container-page relative py-10 lg:py-12">
+      <div class="flex flex-wrap items-center justify-between gap-6">
+        <div class="flex items-center gap-4">
+          <app-user-avatar
+            size="lg"
+            [firstName]="currentUser.firstName"
+            [lastName]="currentUser.lastName"
+            [imageUrl]="currentUser.avatar?.url"
+          />
+          <div>
+            <p class="eyebrow">{{ 'account.title' | translate }}</p>
+            <h1 class="mt-1 text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">
+              {{ userName(currentUser) }}
+            </h1>
+            <p class="mt-1 text-[13px] text-muted">{{ currentUser.email }}</p>
+          </div>
+        </div>
+        <div class="rounded-lg border border-line bg-bg px-3.5 py-2 text-[12px] font-medium text-muted">
+          {{ 'account.memberSince' | translate: { date: (currentUser.createdAt | localDate: 'long') } }}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="container-page py-8 lg:py-10">
+    <div class="grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-8">
+      <nav class="no-scrollbar -mx-1 flex gap-1 overflow-x-auto px-1 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0" aria-label="Account sections">
+        @for (tab of tabs; track tab.id) {
+          <button
+            type="button"
+            class="flex shrink-0 items-center gap-2.5 rounded-lg px-3.5 py-2.5 text-[13px] font-semibold transition-colors lg:w-full"
+            [class]="
+              activeTab() === tab.id
+                ? 'bg-brand text-white'
+                : 'text-muted hover:bg-surface-2 hover:text-ink'
+            "
+            [attr.aria-current]="activeTab() === tab.id ? 'page' : null"
+            (click)="setTab(tab.id)"
+          >
+            <i [class]="tab.icon + ' text-xs'" aria-hidden="true"></i>
+            <span class="truncate">{{ tab.labelKey | translate }}</span>
+            @if (tab.id === 'notifications' && unread()) {
+              <span
+                class="ml-auto grid h-5 min-w-5 place-items-center rounded-full px-1 text-[10px] font-bold"
+                [class]="activeTab() === tab.id ? 'bg-white/20 text-white' : 'bg-brand text-white'"
+                >{{ unread() }}</span
+              >
+            }
+          </button>
+        }
+      </nav>
+
+      <div class="min-w-0">
+        @switch (activeTab()) {
+          @case ('profile') {
+            <section class="surface-card p-6">
+              <p class="eyebrow">{{ 'account.profile' | translate }}</p>
+              <h2 class="mt-2 text-xl font-extrabold text-ink">{{ 'account.profile' | translate }}</h2>
+              <p class="mt-2 text-sm leading-6 text-muted">{{ 'account.subtitle' | translate }}</p>
+
+              <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="mt-6 space-y-5" novalidate>
+                <div class="grid gap-5 sm:grid-cols-2">
+                  <div>
+                    <label class="field-label" for="profile-first">{{ 'account.firstName' | translate }}</label>
+                    <input id="profile-first" type="text" formControlName="firstName" autocomplete="given-name" class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none" />
+                    @if (profileForm.controls.firstName.touched && profileForm.controls.firstName.invalid) {
+                      <p class="field-error">{{ 'validation.required' | translate }}</p>
+                    }
+                  </div>
+                  <div>
+                    <label class="field-label" for="profile-last">{{ 'account.lastName' | translate }}</label>
+                    <input id="profile-last" type="text" formControlName="lastName" autocomplete="family-name" class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none" />
+                    @if (profileForm.controls.lastName.touched && profileForm.controls.lastName.invalid) {
+                      <p class="field-error">{{ 'validation.required' | translate }}</p>
+                    }
+                  </div>
+                  <div>
+                    <label class="field-label" for="profile-phone">{{ 'account.phone' | translate }}</label>
+                    <input id="profile-phone" type="tel" formControlName="phone" autocomplete="tel" class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none" />
+                    @if (profileForm.controls.phone.touched && profileForm.controls.phone.invalid) {
+                      <p class="field-error">{{ 'validation.phone' | translate }}</p>
+                    }
+                  </div>
+                  <div>
+                    <label class="field-label" for="profile-language">{{ 'account.preferredLanguage' | translate }}</label>
+                    <select id="profile-language" formControlName="preferredLanguage" class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none">
+                      @for (code of languageOptions; track code) {
+                        <option [value]="code">{{ 'language.' + code | translate }}</option>
+                      }
+                    </select>
+                  </div>
+                  <div class="sm:col-span-2">
+                    <label class="field-label" for="profile-email">{{ 'auth.email' | translate }}</label>
+                    <input id="profile-email" type="email" [value]="currentUser.email" disabled class="w-full cursor-not-allowed rounded-lg border border-line bg-surface-2 px-3 py-2.5 text-sm text-muted" />
+                    <p class="field-hint">{{ 'account.emailLocked' | translate }}</p>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  [disabled]="savingProfile()"
+                  class="inline-flex items-center gap-2 rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-600 disabled:opacity-60"
+                >
+                  @if (savingProfile()) {
+                    <i class="pi pi-spin pi-spinner text-xs" aria-hidden="true"></i>
+                  }
+                  {{ 'account.saveProfile' | translate }}
+                </button>
+              </form>
+            </section>
+          }
+
+          @case ('registrations') {
+            <section class="space-y-6">
+              <div class="surface-card p-6">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p class="eyebrow">{{ 'account.myRegistrations' | translate }}</p>
+                    <h2 class="mt-2 text-xl font-extrabold text-ink">{{ 'account.myRegistrations' | translate }}</h2>
+                  </div>
+                  <a routerLink="/tournaments" class="text-[12px] font-semibold text-brand hover:underline">
+                    {{ 'nav.browse' | translate }}
+                  </a>
+                </div>
+
+                @if (registrationsLoading() && !registrations().length) {
+                  <div class="mt-6 space-y-3">
+                    <div class="skeleton-block h-24 w-full"></div>
+                    <div class="skeleton-block h-24 w-full"></div>
+                  </div>
+                } @else if (registrations().length) {
+                  <div class="mt-6 space-y-3">
+                    @for (registration of registrations(); track registration.id) {
+                      <article class="rounded-xl border border-line bg-bg p-4 transition-colors hover:border-brand/30">
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                          <div class="min-w-0">
+                            @if (tournamentOf(registration); as tournament) {
+                              <a [routerLink]="['/tournaments', tournament.slug]" class="text-[15px] font-bold text-ink hover:text-brand">
+                                {{ tournament.title }}
+                              </a>
+                              <p class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-muted">
+                                <span class="inline-flex items-center gap-1.5">
+                                  <i class="pi pi-calendar text-[10px]" aria-hidden="true"></i>
+                                  {{ tournament.startDate | localDate: 'datetime' }}
+                                </span>
+                                <span class="inline-flex items-center gap-1.5 font-mono text-[11px]">
+                                  <i class="pi pi-ticket text-[10px]" aria-hidden="true"></i>
+                                  {{ registration.registrationNumber }}
+                                </span>
+                              </p>
+                            } @else {
+                              <p class="text-[15px] font-bold text-ink">{{ 'account.tournament' | translate }}</p>
+                              <p class="mt-1 font-mono text-[11px] text-muted">{{ registration.registrationNumber }}</p>
+                            }
+                          </div>
+                          <app-status-badge [status]="registration.status"></app-status-badge>
+                        </div>
+
+                        <div class="mt-3 flex flex-wrap items-center gap-3 border-t border-line pt-3 text-[12px]">
+                          <span class="font-medium text-muted">
+                            {{ 'account.registeredAt' | translate }}:
+                            {{ registration.createdAt | localDate: 'datetime' }}
+                          </span>
+                          @if (tournamentOf(registration); as tournament) {
+                            <a [routerLink]="['/tournaments', tournament.slug]" class="ml-auto inline-flex items-center gap-1.5 font-semibold text-brand hover:underline">
+                              {{ 'account.view' | translate }}
+                              <i class="pi pi-arrow-right text-[9px]" aria-hidden="true"></i>
+                            </a>
+                          }
+                          @if (registration.status === 'pending' || registration.status === 'approved' || registration.status === 'waitlisted') {
+                            <button
+                              type="button"
+                              class="inline-flex items-center gap-1.5 font-semibold text-danger hover:underline"
+                              (click)="cancelRegistration(registration)"
+                            >
+                              <i class="pi pi-times-circle text-[10px]" aria-hidden="true"></i>
+                              {{ 'account.cancel' | translate }}
+                            </button>
+                          }
+                        </div>
+                      </article>
+                    }
+                  </div>
+                } @else {
+                  <app-empty-state
+                    icon="pi pi-ticket"
+                    titleKey="account.noRegistrations"
+                    textKey="account.noRegistrationsText"
+                    actionKey="nav.browse"
+                    actionLink="/tournaments"
+                  />
+                }
+              </div>
+
+              <div class="surface-card p-6">
+                <p class="eyebrow">{{ 'account.lookupTitle' | translate }}</p>
+                <h3 class="mt-2 text-lg font-bold text-ink">{{ 'account.lookupTitle' | translate }}</h3>
+                <p class="mt-1.5 text-sm leading-6 text-muted">{{ 'account.lookupSubtitle' | translate }}</p>
+
+                <form [formGroup]="lookupForm" (ngSubmit)="lookupRegistration()" class="mt-4 grid gap-4 sm:grid-cols-[1fr_1fr_auto]" novalidate>
+                  <div>
+                    <label class="field-label" for="account-lookup-number">{{ 'tournament.regNumber' | translate }}</label>
+                    <input id="account-lookup-number" type="text" formControlName="number" class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 font-mono text-sm text-ink placeholder:font-sans focus:border-brand focus:outline-none" />
+                  </div>
+                  <div>
+                    <label class="field-label" for="account-lookup-email">{{ 'form.email' | translate }}</label>
+                    <input id="account-lookup-email" type="email" formControlName="email" class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none" />
+                  </div>
+                  <div class="flex items-end">
+                    <button type="submit" [disabled]="lookupLoading()" class="inline-flex h-[42px] w-full items-center justify-center gap-2 rounded-lg border border-line bg-surface px-4 text-[13px] font-semibold text-ink hover:border-brand/40 hover:text-brand disabled:opacity-60 sm:w-auto">
+                      <i [class]="lookupLoading() ? 'pi pi-spin pi-spinner' : 'pi pi-search'" class="text-xs" aria-hidden="true"></i>
+                      {{ 'tournament.lookupButton' | translate }}
+                    </button>
+                  </div>
+                </form>
+
+                @if (lookupError(); as error) {
+                  <p class="mt-3 text-[13px] font-medium text-muted">{{ error | translate }}</p>
+                }
+                @if (lookupResult(); as result) {
+                  <div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-brand/25 bg-brand-soft/50 p-4">
+                    <div class="flex items-center gap-2">
+                      <span class="font-mono text-[12px] font-bold text-ink">{{ result.registrationNumber }}</span>
+                      <app-status-badge [status]="result.status"></app-status-badge>
+                    </div>
+                    <span class="text-[12px] font-medium text-muted">
+                      {{ result.participantInformation.firstName }} {{ result.participantInformation.lastName }}
+                    </span>
+                  </div>
+                }
+              </div>
+            </section>
+          }
+
+          @case ('security') {
+            <section class="surface-card p-6">
+              <p class="eyebrow">{{ 'account.security' | translate }}</p>
+              <h2 class="mt-2 text-xl font-extrabold text-ink">{{ 'account.security' | translate }}</h2>
+              <p class="mt-2 text-sm leading-6 text-muted">{{ 'auth.passwordHint' | translate }}</p>
+
+              <form [formGroup]="passwordForm" (ngSubmit)="savePassword()" class="mt-6 max-w-lg space-y-5" novalidate>
+                <div>
+                  <label class="field-label" for="security-current">{{ 'account.currentPassword' | translate }}</label>
+                  <input id="security-current" type="password" formControlName="currentPassword" autocomplete="current-password" class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none" />
+                  @if (passwordForm.controls.currentPassword.touched && passwordForm.controls.currentPassword.invalid) {
+                    <p class="field-error">{{ 'validation.required' | translate }}</p>
+                  }
+                </div>
+                <div>
+                  <label class="field-label" for="security-new">{{ 'account.newPassword' | translate }}</label>
+                  <input id="security-new" type="password" formControlName="newPassword" autocomplete="new-password" class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none" />
+                  @if (passwordForm.controls.newPassword.touched && passwordForm.controls.newPassword.invalid) {
+                    <p class="field-error">{{ 'validation.passwordWeak' | translate }}</p>
+                  }
+                </div>
+                <div>
+                  <label class="field-label" for="security-confirm">{{ 'auth.confirmPassword' | translate }}</label>
+                  <input id="security-confirm" type="password" formControlName="confirmPassword" autocomplete="new-password" class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none" />
+                  @if (mismatch) {
+                    <p class="field-error">{{ 'auth.passwordMismatch' | translate }}</p>
+                  } @else if (passwordForm.controls.confirmPassword.touched && passwordForm.controls.confirmPassword.invalid) {
+                    <p class="field-error">{{ 'validation.required' | translate }}</p>
+                  }
+                </div>
+
+                <button type="submit" [disabled]="savingPassword()" class="inline-flex items-center gap-2 rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-600 disabled:opacity-60">
+                  @if (savingPassword()) {
+                    <i class="pi pi-spin pi-spinner text-xs" aria-hidden="true"></i>
+                  }
+                  {{ 'account.changePassword' | translate }}
+                </button>
+              </form>
+            </section>
+          }
+
+          @case ('notifications') {
+            <section class="surface-card p-6">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p class="eyebrow">{{ 'account.notifications' | translate }}</p>
+                  <h2 class="mt-2 text-xl font-extrabold text-ink">{{ 'account.notifications' | translate }}</h2>
+                </div>
+                <div class="flex items-center gap-3">
+                  @if (unread()) {
+                    <span class="rounded-full bg-brand-soft px-2.5 py-1 text-[11px] font-bold text-brand">
+                      {{ 'account.unread' | translate: { count: unread() } }}
+                    </span>
+                    <button type="button" class="text-[12px] font-semibold text-brand hover:underline" (click)="markAllRead()">
+                      {{ 'common.markAllRead' | translate }}
+                    </button>
+                  }
+                </div>
+              </div>
+
+              @if (notificationsLoading() && !notifications().length) {
+                <div class="mt-6 space-y-3">
+                  <div class="skeleton-block h-20 w-full"></div>
+                  <div class="skeleton-block h-20 w-full"></div>
+                </div>
+              } @else if (notifications().length) {
+                <ul class="mt-6 divide-y divide-line">
+                  @for (notification of notifications(); track notification.id) {
+                    <li class="flex gap-3 py-4" [class.opacity-60]="notification.readAt">
+                      <span
+                        class="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-sm"
+                        [class]="notification.readAt ? 'bg-surface-2 text-muted' : 'bg-brand-soft text-brand'"
+                      >
+                        <i [class]="notificationIcon(notification.type)" aria-hidden="true"></i>
+                      </span>
+                      <div class="min-w-0 flex-1">
+                        <div class="flex flex-wrap items-start justify-between gap-2">
+                          <p class="text-sm font-bold text-ink">{{ notificationTitle(notification) }}</p>
+                          @if (!notification.readAt) {
+                            <button type="button" class="text-[11px] font-semibold text-brand hover:underline" (click)="markRead(notification)">
+                              {{ 'account.markRead' | translate }}
+                            </button>
+                          }
+                        </div>
+                        <p class="mt-1 text-[13px] leading-6 text-muted">{{ notificationMessage(notification) }}</p>
+                        <p class="mt-1.5 text-[11px] text-muted">{{ notification.createdAt | localDate: 'datetime' }}</p>
+                      </div>
+                    </li>
+                  }
+                </ul>
+              } @else {
+                <app-empty-state icon="pi pi-bell" titleKey="common.noNotifications" />
+              }
+            </section>
+          }
+        }
+      </div>
+    </div>
+  </section>
+} @else {
+  <div class="container-page py-16">
+    <div class="skeleton-block h-24 w-full"></div>
+    <div class="skeleton-block mt-6 h-72 w-full"></div>
+  </div>
+}

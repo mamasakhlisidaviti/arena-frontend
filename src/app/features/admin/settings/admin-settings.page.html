@@ -1,0 +1,213 @@
+<section class="space-y-6">
+  <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">
+        {{ 'admin.overview' | translate }}
+      </p>
+      <h1 class="mt-1 text-2xl font-extrabold tracking-tight text-ink">
+        {{ 'admin.settingsTitle' | translate }}
+      </h1>
+      <p class="mt-1 max-w-2xl text-sm text-muted">{{ 'admin.settingsSubtitle' | translate }}</p>
+    </div>
+    <a
+      routerLink="/"
+      class="inline-flex items-center justify-center gap-2 rounded-lg border border-line px-4 py-2.5 text-[13px] font-semibold text-ink transition-colors hover:border-brand/40 hover:text-brand"
+    >
+      <i class="pi pi-external-link text-xs" aria-hidden="true"></i>
+      {{ 'admin.backToSite' | translate }}
+    </a>
+  </header>
+
+  @if (error()) {
+    <div class="surface-card flex flex-col items-start gap-3 border-l-4 border-l-rose-500 p-5 sm:flex-row sm:items-center sm:justify-between">
+      <p class="text-sm font-medium text-ink">{{ error() | translate }}</p>
+      <button type="button" class="rounded-lg bg-brand px-3.5 py-2 text-[12px] font-semibold text-white hover:bg-brand-600" (click)="load()">
+        {{ 'common.retry' | translate }}
+      </button>
+    </div>
+  } @else if (loading()) {
+    <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <div class="surface-card animate-pulse space-y-5 p-6">
+        <div class="h-4 w-1/4 rounded bg-surface-2"></div>
+        <div class="grid gap-4 sm:grid-cols-3">
+          @for (block of [1, 2, 3]; track block) {
+            <div class="h-11 rounded-lg bg-surface-2"></div>
+          }
+        </div>
+        <div class="grid gap-4 sm:grid-cols-3">
+          @for (block of [1, 2, 3]; track block) {
+            <div class="h-20 rounded-lg bg-surface-2"></div>
+          }
+        </div>
+      </div>
+      <div class="surface-card h-64 animate-pulse"></div>
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="save()" class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <div class="space-y-6">
+        <section class="surface-card p-5 sm:p-6">
+          <div class="flex items-start gap-3">
+            <span class="grid h-9 w-9 place-items-center rounded-lg bg-brand-soft text-brand" aria-hidden="true">
+              <i class="pi pi-sparkles text-sm"></i>
+            </span>
+            <div>
+              <h2 class="text-base font-bold text-ink">{{ 'admin.brandIdentity' | translate }}</h2>
+              <p class="mt-0.5 text-[12px] text-muted">{{ 'admin.settingsHint' | translate }}</p>
+            </div>
+          </div>
+
+          <div class="mt-5 space-y-5">
+            <div>
+              <p class="field-label">{{ 'admin.siteName' | translate }} <span class="text-brand">*</span></p>
+              <div class="grid gap-3 sm:grid-cols-3">
+                <div>
+                  <label class="mb-1 block text-[10px] font-bold uppercase tracking-wide text-muted" for="settings-name-ka">KA</label>
+                  <input id="settings-name-ka" type="text" formControlName="siteNameKa" lang="ka" class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-[10px] font-bold uppercase tracking-wide text-muted" for="settings-name-en">EN</label>
+                  <input id="settings-name-en" type="text" formControlName="siteNameEn" lang="en" class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-[10px] font-bold uppercase tracking-wide text-muted" for="settings-name-ru">RU</label>
+                  <input id="settings-name-ru" type="text" formControlName="siteNameRu" lang="ru" class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none" />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <p class="field-label">{{ 'admin.tagline' | translate }}</p>
+              <div class="grid gap-3 sm:grid-cols-3">
+                <div>
+                  <label class="mb-1 block text-[10px] font-bold uppercase tracking-wide text-muted" for="settings-tagline-ka">KA</label>
+                  <textarea id="settings-tagline-ka" rows="3" formControlName="taglineKa" lang="ka" class="w-full resize-y rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none"></textarea>
+                </div>
+                <div>
+                  <label class="mb-1 block text-[10px] font-bold uppercase tracking-wide text-muted" for="settings-tagline-en">EN</label>
+                  <textarea id="settings-tagline-en" rows="3" formControlName="taglineEn" lang="en" class="w-full resize-y rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none"></textarea>
+                </div>
+                <div>
+                  <label class="mb-1 block text-[10px] font-bold uppercase tracking-wide text-muted" for="settings-tagline-ru">RU</label>
+                  <textarea id="settings-tagline-ru" rows="3" formControlName="taglineRu" lang="ru" class="w-full resize-y rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="surface-card p-5 sm:p-6">
+          <div class="flex items-start gap-3">
+            <span class="grid h-9 w-9 place-items-center rounded-lg bg-brand-soft text-brand" aria-hidden="true">
+              <i class="pi pi-envelope text-sm"></i>
+            </span>
+            <div>
+              <h2 class="text-base font-bold text-ink">{{ 'admin.contactDetails' | translate }}</h2>
+              <p class="mt-0.5 text-[12px] text-muted">{{ 'common.contact' | translate }}</p>
+            </div>
+          </div>
+          <div class="mt-5 max-w-md">
+            <label class="field-label" for="settings-email">{{ 'admin.contactEmail' | translate }}</label>
+            <input id="settings-email" type="email" formControlName="contactEmail" autocomplete="email" placeholder="hello@arena.ge" class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none" />
+            @if (form.controls.contactEmail.touched && form.controls.contactEmail.invalid) {
+              <p class="field-error">{{ 'validation.email' | translate }}</p>
+            }
+          </div>
+        </section>
+
+        <section class="surface-card p-5 sm:p-6">
+          <div class="flex items-start gap-3">
+            <span class="grid h-9 w-9 place-items-center rounded-lg bg-brand-soft text-brand" aria-hidden="true">
+              <i class="pi pi-share-alt text-sm"></i>
+            </span>
+            <div>
+              <h2 class="text-base font-bold text-ink">{{ 'admin.socialLinksSection' | translate }}</h2>
+              <p class="mt-0.5 text-[12px] text-muted">Facebook · Instagram · YouTube</p>
+            </div>
+          </div>
+          <div class="mt-5 grid gap-4 sm:grid-cols-3">
+            <div>
+              <label class="field-label" for="settings-facebook">
+                <i class="pi pi-facebook mr-1 text-[11px]" aria-hidden="true"></i>
+                {{ 'admin.facebook' | translate }}
+              </label>
+              <input id="settings-facebook" type="url" formControlName="facebook" placeholder="https://facebook.com/…" class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none" />
+              @if (form.controls.facebook.touched && form.controls.facebook.invalid) {
+                <p class="field-error">{{ 'validation.url' | translate }}</p>
+              }
+            </div>
+            <div>
+              <label class="field-label" for="settings-instagram">
+                <i class="pi pi-instagram mr-1 text-[11px]" aria-hidden="true"></i>
+                {{ 'admin.instagram' | translate }}
+              </label>
+              <input id="settings-instagram" type="url" formControlName="instagram" placeholder="https://instagram.com/…" class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none" />
+              @if (form.controls.instagram.touched && form.controls.instagram.invalid) {
+                <p class="field-error">{{ 'validation.url' | translate }}</p>
+              }
+            </div>
+            <div>
+              <label class="field-label" for="settings-youtube">
+                <i class="pi pi-youtube mr-1 text-[11px]" aria-hidden="true"></i>
+                {{ 'admin.youtube' | translate }}
+              </label>
+              <input id="settings-youtube" type="url" formControlName="youtube" placeholder="https://youtube.com/…" class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none" />
+              @if (form.controls.youtube.touched && form.controls.youtube.invalid) {
+                <p class="field-error">{{ 'validation.url' | translate }}</p>
+              }
+            </div>
+          </div>
+        </section>
+
+        <div class="flex items-center justify-end gap-2">
+          <button type="button" class="rounded-lg border border-line px-4 py-2.5 text-sm font-semibold text-ink hover:bg-surface-2" (click)="load()">
+            {{ 'common.reset' | translate }}
+          </button>
+          <button type="submit" class="inline-flex items-center gap-2 rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-60" [disabled]="saving()">
+            @if (saving()) {
+              <i class="pi pi-spin pi-spinner text-xs" aria-hidden="true"></i>
+            }
+            {{ 'common.save' | translate }}
+          </button>
+        </div>
+      </div>
+
+      <aside class="surface-card overflow-hidden lg:sticky lg:top-24">
+        <div class="border-b border-line px-4 py-3">
+          <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-muted">{{ 'admin.publicPreview' | translate }}</p>
+        </div>
+        <div class="bg-gradient-to-br from-brand-800 via-brand-700 to-brand-900 p-5 text-white">
+          <div class="flex items-center gap-2.5">
+            <span class="grid h-9 w-9 place-items-center rounded-lg bg-white/10 text-lg" aria-hidden="true">♞</span>
+            <p class="text-base font-extrabold tracking-tight">{{ previewName() }}</p>
+          </div>
+          @if (previewTagline()) {
+            <p class="mt-3 text-[12px] leading-5 text-white/75">{{ previewTagline() }}</p>
+          } @else {
+            <p class="mt-3 text-[12px] leading-5 text-white/50">{{ 'admin.tagline' | translate }}</p>
+          }
+          <div class="mt-4 flex items-center gap-2">
+            @if (form.controls.facebook.value) {
+              <span class="grid h-8 w-8 place-items-center rounded-lg bg-white/10"><i class="pi pi-facebook text-xs" aria-hidden="true"></i></span>
+            }
+            @if (form.controls.instagram.value) {
+              <span class="grid h-8 w-8 place-items-center rounded-lg bg-white/10"><i class="pi pi-instagram text-xs" aria-hidden="true"></i></span>
+            }
+            @if (form.controls.youtube.value) {
+              <span class="grid h-8 w-8 place-items-center rounded-lg bg-white/10"><i class="pi pi-youtube text-xs" aria-hidden="true"></i></span>
+            }
+          </div>
+        </div>
+        <div class="space-y-2 px-4 py-4 text-[12px]">
+          <div class="flex items-center gap-2 text-muted">
+            <i class="pi pi-envelope text-[11px]" aria-hidden="true"></i>
+            <span class="truncate">{{ form.controls.contactEmail.value || ('common.notAvailable' | translate) }}</span>
+          </div>
+          <div class="flex items-center gap-2 text-muted">
+            <i class="pi pi-globe text-[11px]" aria-hidden="true"></i>
+            <span>arena.ge</span>
+          </div>
+        </div>
+      </aside>
+    </form>
+  }
+</section>

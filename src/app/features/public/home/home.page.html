@@ -1,0 +1,333 @@
+<section class="relative overflow-hidden border-b border-line">
+  <div class="hero-pattern"></div>
+  <div
+    class="container-page relative grid gap-12 py-14 sm:py-16 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-16 lg:py-24"
+  >
+    <div class="rise-in">
+      <span class="inline-flex items-center gap-2 rounded-full border border-brand/20 bg-brand-soft px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-brand">
+        <span aria-hidden="true">♞</span>
+        {{ 'home.heroBadge' | translate }}
+      </span>
+
+      <h1 class="mt-5 text-4xl font-extrabold leading-[1.05] tracking-tight text-ink sm:text-5xl xl:text-6xl">
+        {{ 'home.heroTitle' | translate }}
+        <span class="text-gradient">{{ 'home.heroAccent' | translate }}</span>
+      </h1>
+
+      <p class="mt-5 max-w-xl text-[15px] leading-7 text-muted sm:text-base">
+        {{ 'home.heroSubtitle' | translate }}
+      </p>
+
+      <div class="mt-8 flex flex-wrap items-center gap-3">
+        <a
+          routerLink="/tournaments"
+          class="inline-flex items-center gap-2 rounded-lg bg-brand px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-brand-600"
+        >
+          {{ 'home.explore' | translate }}
+          <i class="pi pi-arrow-right text-[11px]" aria-hidden="true"></i>
+        </a>
+        <a
+          routerLink="/admin/tournaments/new"
+          class="inline-flex items-center gap-2 rounded-lg border border-line bg-surface px-5 py-3 text-sm font-semibold text-ink transition-all hover:-translate-y-0.5 hover:border-brand/40 hover:text-brand"
+        >
+          <i class="pi pi-plus text-[11px]" aria-hidden="true"></i>
+          {{ 'home.createTournament' | translate }}
+        </a>
+      </div>
+
+      <p class="mt-8 flex items-center gap-2 text-[12px] font-medium text-muted">
+        <i class="pi pi-verified text-brand" aria-hidden="true"></i>
+        {{ 'home.trusted' | translate }}
+      </p>
+    </div>
+
+    <div class="relative rise-in">
+      <div class="relative overflow-hidden rounded-2xl border border-line bg-surface shadow-[0_30px_70px_-40px_rgba(16,26,21,0.45)]">
+        <div class="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-brand-800 via-brand-700 to-brand-900">
+          @if (spotlight()?.coverImage?.url) {
+            <img
+              [src]="spotlight()!.coverImage!.url"
+              [alt]="spotlightTitle()"
+              class="h-full w-full object-cover"
+            />
+          } @else {
+            <div class="flex h-full w-full items-center justify-center text-[10rem] leading-none text-white/15" aria-hidden="true">♞</div>
+          }
+          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"></div>
+
+          <div class="absolute inset-x-0 bottom-0 p-5 sm:p-6">
+            @if (spotlight(); as event) {
+              <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-white/70">
+                {{ spotlightCategory() || ('misc.featured' | translate) }}
+              </p>
+              <h2 class="mt-1.5 text-xl font-bold leading-snug text-white sm:text-2xl">
+                <a [routerLink]="['/tournaments', event.slug]" class="hover:underline">{{ spotlightTitle() }}</a>
+              </h2>
+              <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12px] font-medium text-white/80">
+                <span class="inline-flex items-center gap-1.5">
+                  <i class="pi pi-calendar text-[10px]" aria-hidden="true"></i>
+                  {{ event.startDate | localDate: 'datetime' }}
+                </span>
+                <span class="inline-flex items-center gap-1.5">
+                  <i class="pi pi-users text-[10px]" aria-hidden="true"></i>
+                  {{ event.currentParticipants }}/{{ event.participantLimit }}
+                </span>
+              </div>
+              <a
+                [routerLink]="['/tournaments', event.slug]"
+                class="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-white/95 px-3.5 py-2 text-[12px] font-bold text-brand-900 transition-colors hover:bg-white"
+              >
+                {{ 'common.viewDetails' | translate }}
+                <i class="pi pi-arrow-right text-[9px]" aria-hidden="true"></i>
+              </a>
+            } @else {
+              <h2 class="text-xl font-bold text-white">{{ 'home.noTournaments' | translate }}</h2>
+              <a
+                routerLink="/tournaments"
+                class="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-white/95 px-3.5 py-2 text-[12px] font-bold text-brand-900"
+              >
+                {{ 'home.explore' | translate }}
+              </a>
+            }
+          </div>
+        </div>
+      </div>
+
+      @if (home(); as data) {
+        <div
+          class="absolute -bottom-5 -left-3 hidden items-center gap-3 rounded-xl border border-line bg-surface px-4 py-3 shadow-[0_20px_40px_-24px_rgba(16,26,21,0.5)] sm:flex"
+        >
+          <span class="grid h-9 w-9 place-items-center rounded-lg bg-gold-500/15 text-gold-600">
+            <i class="pi pi-trophy" aria-hidden="true"></i>
+          </span>
+          <div>
+            <p class="text-[10px] font-bold uppercase tracking-[0.12em] text-muted">{{ 'home.statsParticipants' | translate }}</p>
+            <p class="text-lg font-extrabold leading-none text-ink">{{ number(data.stats.participants) }}</p>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+@if (home(); as data) {
+  <section class="border-b border-line bg-surface">
+    <div class="container-page grid grid-cols-1 divide-y divide-line sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+      <div class="flex items-center gap-4 px-1 py-6 sm:px-6">
+        <span class="icon-tile"><i class="pi pi-flag" aria-hidden="true"></i></span>
+        <div>
+          <p class="stat-value text-ink">{{ number(data.stats.tournaments) }}</p>
+          <p class="text-[12px] font-medium text-muted">{{ 'home.statsTournaments' | translate }}</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-4 px-1 py-6 sm:px-6">
+        <span class="icon-tile"><i class="pi pi-users" aria-hidden="true"></i></span>
+        <div>
+          <p class="stat-value text-ink">{{ number(data.stats.participants) }}</p>
+          <p class="text-[12px] font-medium text-muted">{{ 'home.statsParticipants' | translate }}</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-4 px-1 py-6 sm:px-6">
+        <span class="icon-tile"><i class="pi pi-sitemap" aria-hidden="true"></i></span>
+        <div>
+          <p class="stat-value text-ink">{{ number(data.stats.categories) }}</p>
+          <p class="text-[12px] font-medium text-muted">{{ 'home.statsCategories' | translate }}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+}
+
+@if (loading() && !home()) {
+  <section class="container-page py-16">
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      @for (index of [1, 2, 3]; track index) {
+        <div class="surface-card h-80 p-4">
+          <div class="skeleton-block h-40 w-full"></div>
+          <div class="skeleton-block mt-4 h-4 w-3/4"></div>
+          <div class="skeleton-block mt-2 h-3 w-1/2"></div>
+          <div class="skeleton-block mt-6 h-3 w-full"></div>
+        </div>
+      }
+    </div>
+  </section>
+}
+
+@if (featured().length) {
+  <section class="container-page py-16 lg:py-20">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <p class="eyebrow"><span class="h-1.5 w-1.5 rounded-full bg-gold-500"></span>{{ 'misc.featured' | translate }}</p>
+        <h2 class="mt-2 text-2xl font-extrabold text-ink sm:text-3xl">{{ 'home.featuredTitle' | translate }}</h2>
+        <p class="mt-2 max-w-2xl text-sm leading-6 text-muted">{{ 'home.featuredSubtitle' | translate }}</p>
+      </div>
+      <a routerLink="/tournaments" class="group inline-flex items-center gap-1.5 text-sm font-semibold text-brand">
+        {{ 'common.viewAll' | translate }}
+        <i class="pi pi-arrow-right text-[10px] transition-transform group-hover:translate-x-0.5" aria-hidden="true"></i>
+      </a>
+    </div>
+
+    <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      @for (tournament of featured(); track tournament.id) {
+        <app-tournament-card [tournament]="tournament" />
+      }
+    </div>
+  </section>
+}
+
+<section class="container-page py-16 lg:py-20" id="upcoming">
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <p class="eyebrow">{{ 'nav.tournaments' | translate }}</p>
+      <h2 class="mt-2 text-2xl font-extrabold text-ink sm:text-3xl">{{ 'home.upcomingTitle' | translate }}</h2>
+      <p class="mt-2 max-w-2xl text-sm leading-6 text-muted">{{ 'home.upcomingSubtitle' | translate }}</p>
+    </div>
+    <a routerLink="/tournaments" class="group inline-flex items-center gap-1.5 text-sm font-semibold text-brand">
+      {{ 'misc.viewAllTournaments' | translate }}
+      <i class="pi pi-arrow-right text-[10px] transition-transform group-hover:translate-x-0.5" aria-hidden="true"></i>
+    </a>
+  </div>
+
+  <div class="mt-8">
+    @if (upcoming().length) {
+      <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        @for (tournament of upcoming(); track tournament.id) {
+          <app-tournament-card [tournament]="tournament" />
+        }
+      </div>
+    } @else if (!loading()) {
+      <div class="surface-card">
+        <app-empty-state
+          icon="pi pi-calendar"
+          titleKey="home.noTournaments"
+          actionKey="home.explore"
+          actionLink="/tournaments"
+        />
+      </div>
+    }
+  </div>
+</section>
+
+@if (categories().length) {
+  <section id="categories" class="border-y border-line bg-surface py-16 lg:py-20">
+    <div class="container-page">
+      <div class="max-w-2xl">
+        <p class="eyebrow">{{ 'nav.categories' | translate }}</p>
+        <h2 class="mt-2 text-2xl font-extrabold text-ink sm:text-3xl">{{ 'home.categoriesTitle' | translate }}</h2>
+        <p class="mt-2 text-sm leading-6 text-muted">{{ 'home.categoriesSubtitle' | translate }}</p>
+      </div>
+
+      <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        @for (category of categories(); track category.id) {
+          <a
+            [routerLink]="['/tournaments']"
+            [queryParams]="{ category: category.slug }"
+            class="group relative overflow-hidden rounded-xl border border-line bg-bg p-5 transition-all hover:-translate-y-0.5 hover:border-brand/40"
+          >
+            <span class="grid h-11 w-11 place-items-center rounded-xl bg-brand-soft text-lg text-brand">
+              <i [class]="category.icon || 'pi pi-flag'" aria-hidden="true"></i>
+            </span>
+            <h3 class="mt-4 text-base font-bold text-ink">{{ categoryName(category) }}</h3>
+            <p class="mt-1.5 line-clamp-2 text-[13px] leading-5 text-muted">{{ categoryDescription(category) }}</p>
+            <span class="mt-4 inline-flex items-center gap-1.5 text-[12px] font-semibold text-brand">
+              {{ 'nav.tournaments' | translate }}
+              <i class="pi pi-arrow-right text-[9px] transition-transform group-hover:translate-x-0.5" aria-hidden="true"></i>
+            </span>
+          </a>
+        }
+      </div>
+    </div>
+  </section>
+}
+
+<section id="how-it-works" class="container-page py-16 lg:py-20">
+  <div class="max-w-2xl">
+    <p class="eyebrow">{{ 'nav.howItWorks' | translate }}</p>
+    <h2 class="mt-2 text-2xl font-extrabold text-ink sm:text-3xl">{{ 'home.howTitle' | translate }}</h2>
+    <p class="mt-2 text-sm leading-6 text-muted">{{ 'home.howSubtitle' | translate }}</p>
+  </div>
+
+  <div class="relative mt-10 grid gap-6 lg:grid-cols-3">
+    <div class="absolute left-[8%] right-[8%] top-7 hidden h-px bg-line lg:block" aria-hidden="true"></div>
+    @for (step of steps; track step.titleKey; let index = $index) {
+      <div class="relative">
+        <div class="flex items-center gap-4">
+          <span class="relative z-10 grid h-14 w-14 place-items-center rounded-2xl border border-line bg-surface text-xl text-brand shadow-sm">
+            <i [class]="step.icon" aria-hidden="true"></i>
+            <span class="absolute -right-1.5 -top-1.5 grid h-6 w-6 place-items-center rounded-full bg-brand text-[11px] font-bold text-white">{{ index + 1 }}</span>
+          </span>
+          <h3 class="text-base font-bold text-ink">{{ step.titleKey | translate }}</h3>
+        </div>
+        <p class="mt-4 max-w-sm text-sm leading-6 text-muted">{{ step.textKey | translate }}</p>
+      </div>
+    }
+  </div>
+</section>
+
+<section id="benefits" class="border-y border-line bg-surface py-16 lg:py-20">
+  <div class="container-page">
+    <div class="max-w-2xl">
+      <p class="eyebrow">{{ 'nav.benefits' | translate }}</p>
+      <h2 class="mt-2 text-2xl font-extrabold text-ink sm:text-3xl">{{ 'home.benefitsTitle' | translate }}</h2>
+      <p class="mt-2 text-sm leading-6 text-muted">{{ 'home.benefitsSubtitle' | translate }}</p>
+    </div>
+
+    <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      @for (benefit of benefits; track benefit.titleKey) {
+        <div class="rounded-xl border border-line bg-bg p-5">
+          <span class="icon-tile"><i [class]="benefit.icon" aria-hidden="true"></i></span>
+          <h3 class="mt-4 text-[15px] font-bold text-ink">{{ benefit.titleKey | translate }}</h3>
+          <p class="mt-2 text-[13px] leading-6 text-muted">{{ benefit.textKey | translate }}</p>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+@if (recent().length) {
+  <section class="container-page py-16 lg:py-20">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <p class="eyebrow">{{ 'misc.new' | translate }}</p>
+        <h2 class="mt-2 text-2xl font-extrabold text-ink sm:text-3xl">{{ 'home.recentTitle' | translate }}</h2>
+        <p class="mt-2 text-sm leading-6 text-muted">{{ 'home.recentSubtitle' | translate }}</p>
+      </div>
+      <a routerLink="/tournaments" class="inline-flex items-center gap-1.5 text-sm font-semibold text-brand">
+        {{ 'common.viewAll' | translate }}
+      </a>
+    </div>
+    <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      @for (tournament of recent(); track tournament.id) {
+        <app-tournament-card [tournament]="tournament" />
+      }
+    </div>
+  </section>
+}
+
+<section class="container-page pb-20">
+  <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-800 via-brand-700 to-brand-900 px-6 py-12 sm:px-10 lg:px-14 lg:py-16">
+    <div class="pointer-events-none absolute inset-0 opacity-[0.12]" aria-hidden="true">
+      <div class="absolute -right-6 -top-14 text-[16rem] leading-none text-white">♞</div>
+      <div class="absolute bottom-0 left-1/3 text-[8rem] leading-none text-white">♜</div>
+    </div>
+    <div class="relative max-w-2xl">
+      <h2 class="text-2xl font-extrabold text-white sm:text-3xl">{{ 'home.ctaTitle' | translate }}</h2>
+      <p class="mt-3 text-sm leading-7 text-white/70">{{ 'home.ctaText' | translate }}</p>
+      <div class="mt-7 flex flex-wrap gap-3">
+        <a
+          routerLink="/admin/tournaments/new"
+          class="inline-flex items-center gap-2 rounded-lg bg-gold-500 px-5 py-3 text-sm font-bold text-brand-900 transition-colors hover:bg-gold-400"
+        >
+          {{ 'home.ctaButton' | translate }}
+          <i class="pi pi-arrow-right text-[11px]" aria-hidden="true"></i>
+        </a>
+        <a
+          routerLink="/tournaments"
+          class="inline-flex items-center gap-2 rounded-lg border border-white/25 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+        >
+          {{ 'nav.browse' | translate }}
+        </a>
+      </div>
+    </div>
+  </div>
+</section>

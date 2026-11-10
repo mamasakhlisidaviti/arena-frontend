@@ -1,0 +1,829 @@
+<section class="space-y-6">
+  <header class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <div>
+      <a
+        routerLink="/admin/tournaments"
+        class="inline-flex items-center gap-1.5 text-[12px] font-semibold text-muted transition-colors hover:text-brand"
+      >
+        <i class="pi pi-arrow-left text-[10px]" aria-hidden="true"></i>
+        {{ 'admin.tournamentsTitle' | translate }}
+      </a>
+      <h1 class="mt-2 text-2xl font-extrabold tracking-tight text-ink">
+        {{ (editMode() ? 'wizard.editTitle' : 'wizard.newTitle') | translate }}
+      </h1>
+      <p class="mt-1 max-w-2xl text-sm text-muted">{{ 'wizard.subtitle' | translate }}</p>
+      @if (draftSavedAt(); as savedAt) {
+        <p class="mt-2 inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-2.5 py-1 text-[11px] font-medium text-muted">
+          <i class="pi pi-save text-[10px] text-brand" aria-hidden="true"></i>
+          {{ 'wizard.savedDraft' | translate }} · {{ savedAt | localDate: 'time' }}
+        </p>
+      }
+    </div>
+    <button
+      type="button"
+      class="inline-flex items-center gap-2 rounded-lg border border-line bg-surface px-3.5 py-2.5 text-[13px] font-semibold text-ink transition-colors hover:border-brand/40 hover:text-brand"
+      (click)="save(true)"
+    >
+      <i class="pi pi-sign-out text-xs" aria-hidden="true"></i>
+      {{ 'wizard.saveAndExit' | translate }}
+    </button>
+  </header>
+
+  @if (loadError()) {
+    <div class="surface-card px-6 py-14 text-center">
+      <i class="pi pi-exclamation-triangle text-3xl text-rose-500" aria-hidden="true"></i>
+      <p class="mt-3 text-sm font-semibold text-ink">{{ 'errors.loadFailed' | translate }}</p>
+      <button
+        type="button"
+        class="mt-4 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-600"
+        (click)="retryLoad()"
+      >
+        {{ 'common.retry' | translate }}
+      </button>
+    </div>
+  } @else if (loading()) {
+    <div class="surface-card animate-pulse p-6">
+      <div class="h-5 w-64 rounded bg-surface-2"></div>
+      <div class="mt-4 h-40 rounded bg-surface-2"></div>
+    </div>
+  } @else {
+    <nav class="overflow-x-auto pb-1" [attr.aria-label]="'wizard.stepsNav' | translate">
+      <ol class="flex min-w-max items-center gap-1.5">
+        @for (item of steps; track item.labelKey; let index = $index) {
+          <li class="flex items-center gap-1.5">
+            <button
+              type="button"
+              class="flex items-center gap-2 rounded-full border px-3 py-2 text-[12px] font-semibold transition-colors"
+              [class]="
+                index === step()
+                  ? 'border-brand bg-brand text-white'
+                  : index < step()
+                    ? 'border-brand/30 bg-brand-soft text-brand'
+                    : 'border-line bg-surface text-muted'
+              "
+              [disabled]="!canGoTo(index)"
+              (click)="goTo(index)"
+            >
+              <span class="grid h-5 w-5 place-items-center rounded-full text-[10px] font-bold" [class]="index === step() ? 'bg-white/20' : 'bg-surface-2'">
+                @if (index < step()) {
+                  <i class="pi pi-check text-[9px]" aria-hidden="true"></i>
+                } @else {
+                  {{ index + 1 }}
+                }
+              </span>
+              <span class="hidden sm:inline">{{ item.shortKey | translate }}</span>
+            </button>
+            @if (index < steps.length - 1) {
+              <span class="h-px w-4 bg-line" aria-hidden="true"></span>
+            }
+          </li>
+        }
+      </ol>
+    </nav>
+
+    <form [formGroup]="form" (ngSubmit)="save(false)" novalidate>
+      <div class="surface-card p-5 sm:p-7">
+        <div class="mb-6 border-b border-line pb-4">
+          <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">
+            {{ 'wizard.stepCounter' | translate }} {{ step() + 1 }} / {{ steps.length }}
+          </p>
+          <h2 class="mt-1 text-lg font-bold text-ink">{{ steps[step()].labelKey | translate }}</h2>
+          <p class="mt-1 text-[12px] text-muted">{{ 'wizard.requiredFields' | translate }}</p>
+        </div>
+
+        @switch (step()) {
+          @case (0) {
+            <div class="space-y-6">
+              @if (draftRestored()) {
+                <div class="rounded-lg border border-brand/25 bg-brand-soft px-4 py-3 text-[12px] font-medium text-brand">
+                  {{ 'wizard.savedDraft' | translate }}
+                </div>
+              }
+
+              <div class="grid gap-4 lg:grid-cols-3">
+                <div>
+                  <label class="field-label" for="wizard-title-ka">{{ 'wizard.titleKa' | translate }} <span class="text-brand">*</span></label>
+                  <input
+                    id="wizard-title-ka"
+                    type="text"
+                    formControlName="titleKa"
+                    class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label class="field-label" for="wizard-title-en">{{ 'wizard.titleEn' | translate }}</label>
+                  <input
+                    id="wizard-title-en"
+                    type="text"
+                    formControlName="titleEn"
+                    class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label class="field-label" for="wizard-title-ru">{{ 'wizard.titleRu' | translate }}</label>
+                  <input
+                    id="wizard-title-ru"
+                    type="text"
+                    formControlName="titleRu"
+                    class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div class="grid gap-4 lg:grid-cols-[1fr_1.4fr]">
+                <div>
+                  <label class="field-label" for="wizard-category">{{ 'wizard.category' | translate }} <span class="text-brand">*</span></label>
+                  <p-select
+                    inputId="wizard-category"
+                    [formControl]="form.controls.categoryId"
+                    [options]="categoryOptions()"
+                    optionLabel="label"
+                    optionValue="value"
+                    [placeholder]="'wizard.selectCategory' | translate"
+                    appendTo="body"
+                    styleClass="w-full"
+                  />
+                  @if (form.controls.categoryId.touched && form.controls.categoryId.invalid) {
+                    <p class="field-error">{{ 'validation.required' | translate }}</p>
+                  }
+                </div>
+                <div>
+                  <label class="field-label" for="wizard-slug">{{ 'admin.categorySlug' | translate }} <span class="text-muted">({{ 'common.optional' | translate }})</span></label>
+                  <input
+                    id="wizard-slug"
+                    type="text"
+                    formControlName="slug"
+                    placeholder="tbilisi-open-2026"
+                    class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none"
+                  />
+                  @if (form.controls.slug.touched && form.controls.slug.invalid) {
+                    <p class="field-error">{{ 'validation.slug' | translate }}</p>
+                  }
+                </div>
+              </div>
+
+              <div>
+                <p class="field-label">{{ 'wizard.cover' | translate }}</p>
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <div class="relative h-32 w-full overflow-hidden rounded-xl border border-line bg-surface-2 sm:w-56">
+                    @if (coverImage()?.url) {
+                      <img [src]="coverImage()?.url ?? ''" alt="" class="h-full w-full object-cover" />
+                    } @else {
+                      <span class="grid h-full w-full place-items-center text-3xl text-brand/30" aria-hidden="true">♞</span>
+                    }
+                    @if (uploadingCover()) {
+                      <span class="absolute inset-0 grid place-items-center bg-black/45 text-white">
+                        <i class="pi pi-spin pi-spinner text-xl" aria-hidden="true"></i>
+                      </span>
+                    }
+                  </div>
+                  <div class="space-y-2">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <label
+                        class="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-line bg-surface px-3.5 py-2 text-[12px] font-semibold text-ink transition-colors hover:border-brand/40 hover:text-brand"
+                      >
+                        <i class="pi pi-upload text-[11px]" aria-hidden="true"></i>
+                        {{ (uploadingCover() ? 'wizard.uploading' : 'wizard.uploadCover') | translate }}
+                        <input
+                          type="file"
+                          class="sr-only"
+                          accept="image/jpeg,image/png,image/webp"
+                          (change)="onCoverSelected($event)"
+                          [disabled]="uploadingCover()"
+                        />
+                      </label>
+                      @if (coverImage()) {
+                        <button
+                          type="button"
+                          class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-[12px] font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                          (click)="removeCover()"
+                        >
+                          <i class="pi pi-trash text-[11px]" aria-hidden="true"></i>
+                          {{ 'wizard.removeImage' | translate }}
+                        </button>
+                      }
+                    </div>
+                    <p class="text-[11px] text-muted">{{ 'wizard.coverHint' | translate }}</p>
+                    @if (imageError(); as errorKey) {
+                      <p class="field-error">{{ errorKey | translate }}</p>
+                    }
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid gap-4 lg:grid-cols-3">
+                <div>
+                  <label class="field-label" for="wizard-desc-ka">{{ 'wizard.descriptionKa' | translate }}</label>
+                  <textarea
+                    id="wizard-desc-ka"
+                    rows="5"
+                    formControlName="descriptionKa"
+                    class="w-full resize-y rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none"
+                  ></textarea>
+                </div>
+                <div>
+                  <label class="field-label" for="wizard-desc-en">{{ 'wizard.descriptionEn' | translate }}</label>
+                  <textarea
+                    id="wizard-desc-en"
+                    rows="5"
+                    formControlName="descriptionEn"
+                    class="w-full resize-y rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none"
+                  ></textarea>
+                </div>
+                <div>
+                  <label class="field-label" for="wizard-desc-ru">{{ 'wizard.descriptionRu' | translate }}</label>
+                  <textarea
+                    id="wizard-desc-ru"
+                    rows="5"
+                    formControlName="descriptionRu"
+                    class="w-full resize-y rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none"
+                  ></textarea>
+                </div>
+              </div>
+            </div>
+          }
+
+          @case (1) {
+            <div class="space-y-6">
+              <div class="grid gap-4 lg:grid-cols-3">
+                <div>
+                  <label class="field-label" for="wizard-start">{{ 'wizard.startDate' | translate }} <span class="text-brand">*</span></label>
+                  <p-datepicker
+                    inputId="wizard-start"
+                    formControlName="startDate"
+                    [showTime]="true"
+                    [showIcon]="true"
+                    dateFormat="dd/mm/yy"
+                    appendTo="body"
+                    styleClass="w-full"
+                  />
+                  @if (form.controls.startDate.touched && form.controls.startDate.invalid) {
+                    <p class="field-error">{{ 'validation.required' | translate }}</p>
+                  }
+                </div>
+                <div>
+                  <label class="field-label" for="wizard-end">{{ 'wizard.endDate' | translate }}</label>
+                  <p-datepicker
+                    inputId="wizard-end"
+                    formControlName="endDate"
+                    [showTime]="true"
+                    [showIcon]="true"
+                    dateFormat="dd/mm/yy"
+                    appendTo="body"
+                    styleClass="w-full"
+                  />
+                </div>
+                <div>
+                  <label class="field-label" for="wizard-deadline">{{ 'wizard.registrationDeadline' | translate }} <span class="text-brand">*</span></label>
+                  <p-datepicker
+                    inputId="wizard-deadline"
+                    formControlName="registrationDeadline"
+                    [showTime]="true"
+                    [showIcon]="true"
+                    dateFormat="dd/mm/yy"
+                    appendTo="body"
+                    styleClass="w-full"
+                  />
+                  @if (form.controls.registrationDeadline.touched && form.controls.registrationDeadline.invalid) {
+                    <p class="field-error">{{ 'validation.required' | translate }}</p>
+                  }
+                </div>
+              </div>
+
+              @if (form.hasError('dateOrder')) {
+                <p class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-[12px] font-medium text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">
+                  {{ 'wizard.dateOrder' | translate }}
+                </p>
+              }
+              @if (form.hasError('deadlineOrder')) {
+                <p class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-[12px] font-medium text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">
+                  {{ 'wizard.deadlineOrder' | translate }}
+                </p>
+              }
+
+              <label
+                class="flex cursor-pointer items-start gap-3 rounded-xl border border-line bg-surface-2/50 p-4 transition-colors hover:border-brand/30"
+              >
+                <input
+                  type="checkbox"
+                  class="mt-0.5 h-4 w-4 accent-brand"
+                  [checked]="form.controls.isOnline.value"
+                  (change)="onOnlineChange($event)"
+                />
+                <span>
+                  <span class="block text-[13px] font-semibold text-ink">{{ 'wizard.isOnline' | translate }}</span>
+                  <span class="mt-0.5 block text-[11px] text-muted">{{ 'tournament.onlineEvent' | translate }}</span>
+                </span>
+              </label>
+
+              @if (!form.controls.isOnline.value) {
+                <div class="grid gap-4 lg:grid-cols-3">
+                  <div>
+                    <label class="field-label" for="wizard-venue">{{ 'wizard.venue' | translate }} <span class="text-brand">*</span></label>
+                    <input
+                      id="wizard-venue"
+                      type="text"
+                      formControlName="venue"
+                      class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label class="field-label" for="wizard-city">{{ 'wizard.city' | translate }} <span class="text-brand">*</span></label>
+                    <input
+                      id="wizard-city"
+                      type="text"
+                      formControlName="city"
+                      class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label class="field-label" for="wizard-address">{{ 'wizard.address' | translate }}</label>
+                    <input
+                      id="wizard-address"
+                      type="text"
+                      formControlName="address"
+                      class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none"
+                    />
+                  </div>
+                </div>
+                @if (form.controls.venue.touched && !form.controls.venue.value?.trim()) {
+                  <p class="field-error">{{ 'wizard.venueRequired' | translate }}</p>
+                }
+              }
+            </div>
+          }
+
+          @case (2) {
+            <div class="space-y-6">
+              @if (selectedCategory(); as category) {
+                <div class="flex items-center gap-3 rounded-xl border border-brand/20 bg-brand-soft px-4 py-3">
+                  <span class="grid h-9 w-9 place-items-center rounded-lg bg-white/60 text-brand dark:bg-white/10">
+                    <i [class]="category.icon + ' text-sm'" aria-hidden="true"></i>
+                  </span>
+                  <div>
+                    <p class="text-[13px] font-semibold text-brand">{{ categoryName() }}</p>
+                    <p class="text-[11px] text-brand/70">{{ category.slug }}</p>
+                  </div>
+                </div>
+              }
+
+              <div class="grid gap-4 lg:grid-cols-2">
+                <div>
+                  <label class="field-label" for="wizard-type">{{ 'wizard.type' | translate }} <span class="text-brand">*</span></label>
+                  <p-select
+                    inputId="wizard-type"
+                    [formControl]="form.controls.tournamentType"
+                    [options]="typeSelectOptions()"
+                    optionLabel="label"
+                    optionValue="value"
+                    [placeholder]="'wizard.selectCategory' | translate"
+                    appendTo="body"
+                    styleClass="w-full"
+                  />
+                  @if (form.controls.tournamentType.touched && form.controls.tournamentType.invalid) {
+                    <p class="field-error">{{ 'validation.required' | translate }}</p>
+                  }
+                </div>
+                <div>
+                  <label class="field-label" for="wizard-format">{{ 'wizard.format' | translate }} <span class="text-brand">*</span></label>
+                  <p-select
+                    inputId="wizard-format"
+                    [formControl]="form.controls.format"
+                    [options]="formatSelectOptions()"
+                    optionLabel="label"
+                    optionValue="value"
+                    [placeholder]="'wizard.selectCategory' | translate"
+                    appendTo="body"
+                    styleClass="w-full"
+                  />
+                  @if (form.controls.format.touched && form.controls.format.invalid) {
+                    <p class="field-error">{{ 'validation.required' | translate }}</p>
+                  }
+                </div>
+              </div>
+
+              <div class="grid gap-4 lg:grid-cols-2">
+                <div>
+                  <label class="field-label" for="wizard-limit">{{ 'wizard.participantLimit' | translate }} <span class="text-brand">*</span></label>
+                  <input
+                    id="wizard-limit"
+                    type="number"
+                    min="2"
+                    max="100000"
+                    formControlName="participantLimit"
+                    class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none"
+                  />
+                  @if (form.controls.participantLimit.touched && form.controls.participantLimit.invalid) {
+                    <p class="field-error">{{ 'validation.required' | translate }}</p>
+                  }
+                </div>
+              </div>
+
+              @if (supportsRounds() || supportsTimeControl()) {
+                <div class="rounded-xl border border-line p-4">
+                  <p class="text-[12px] font-bold uppercase tracking-wide text-muted">{{ 'wizard.timeControl' | translate }}</p>
+                  <div class="mt-3 grid gap-4 sm:grid-cols-3">
+                    @if (supportsRounds()) {
+                      <div>
+                        <label class="field-label" for="wizard-rounds">{{ 'wizard.rounds' | translate }}</label>
+                        <input
+                          id="wizard-rounds"
+                          type="number"
+                          min="1"
+                          max="30"
+                          formControlName="rounds"
+                          class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none"
+                        />
+                      </div>
+                    }
+                    @if (supportsTimeControl()) {
+                      <div>
+                        <label class="field-label" for="wizard-initial">{{ 'wizard.initialMinutes' | translate }}</label>
+                        <input
+                          id="wizard-initial"
+                          type="number"
+                          min="1"
+                          max="600"
+                          formControlName="initialMinutes"
+                          class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label class="field-label" for="wizard-increment">{{ 'wizard.incrementSeconds' | translate }}</label>
+                        <input
+                          id="wizard-increment"
+                          type="number"
+                          min="0"
+                          max="180"
+                          formControlName="incrementSeconds"
+                          class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none"
+                        />
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          @case (3) {
+            <div class="space-y-6">
+              <div class="grid gap-4 lg:grid-cols-3">
+                <div>
+                  <label class="field-label" for="wizard-fee">{{ 'wizard.entryFee' | translate }}</label>
+                  <input
+                    id="wizard-fee"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    formControlName="entryFee"
+                    class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label class="field-label" for="wizard-currency">{{ 'wizard.currency' | translate }}</label>
+                  <p-select
+                    inputId="wizard-currency"
+                    [formControl]="form.controls.currency"
+                    [options]="['GEL', 'USD', 'EUR']"
+                    appendTo="body"
+                    styleClass="w-full"
+                  />
+                </div>
+                <div>
+                  <label class="field-label" for="wizard-prize">{{ 'wizard.prizePool' | translate }}</label>
+                  <input
+                    id="wizard-prize"
+                    type="number"
+                    min="0"
+                    formControlName="prizePool"
+                    class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div class="space-y-2">
+                <p class="text-[12px] font-bold uppercase tracking-wide text-muted">{{ 'wizard.registrationSection' | translate }}</p>
+                @for (setting of registrationToggles; track setting.key) {
+                  <label class="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-line px-4 py-3 transition-colors hover:border-brand/30">
+                    <span class="text-[13px] font-medium text-ink">{{ setting.labelKey | translate }}</span>
+                    <input
+                      type="checkbox"
+                      class="h-4 w-4 accent-brand"
+                      [checked]="form.controls[setting.key].value"
+                      (change)="toggleControl(setting.key, $event)"
+                    />
+                  </label>
+                }
+              </div>
+            </div>
+          }
+
+          @case (4) {
+            <div class="space-y-6">
+              <div class="grid gap-4 lg:grid-cols-3">
+                <div>
+                  <label class="field-label" for="wizard-rules-ka">{{ 'wizard.rules' | translate }} (KA)</label>
+                  <textarea
+                    id="wizard-rules-ka"
+                    rows="4"
+                    formControlName="rulesKa"
+                    class="w-full resize-y rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none"
+                  ></textarea>
+                </div>
+                <div>
+                  <label class="field-label" for="wizard-rules-en">{{ 'wizard.rules' | translate }} (EN)</label>
+                  <textarea
+                    id="wizard-rules-en"
+                    rows="4"
+                    formControlName="rulesEn"
+                    class="w-full resize-y rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none"
+                  ></textarea>
+                </div>
+                <div>
+                  <label class="field-label" for="wizard-rules-ru">{{ 'wizard.rules' | translate }} (RU)</label>
+                  <textarea
+                    id="wizard-rules-ru"
+                    rows="4"
+                    formControlName="rulesRu"
+                    class="w-full resize-y rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none"
+                  ></textarea>
+                </div>
+              </div>
+
+              <div class="grid gap-4 lg:grid-cols-3">
+                <div>
+                  <label class="field-label" for="wizard-prizes-ka">{{ 'wizard.prizes' | translate }} (KA)</label>
+                  <textarea
+                    id="wizard-prizes-ka"
+                    rows="3"
+                    formControlName="prizesKa"
+                    class="w-full resize-y rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none"
+                  ></textarea>
+                </div>
+                <div>
+                  <label class="field-label" for="wizard-prizes-en">{{ 'wizard.prizes' | translate }} (EN)</label>
+                  <textarea
+                    id="wizard-prizes-en"
+                    rows="3"
+                    formControlName="prizesEn"
+                    class="w-full resize-y rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none"
+                  ></textarea>
+                </div>
+                <div>
+                  <label class="field-label" for="wizard-prizes-ru">{{ 'wizard.prizes' | translate }} (RU)</label>
+                  <textarea
+                    id="wizard-prizes-ru"
+                    rows="3"
+                    formControlName="prizesRu"
+                    class="w-full resize-y rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none"
+                  ></textarea>
+                </div>
+              </div>
+
+              <div class="grid gap-4 lg:grid-cols-3">
+                <div>
+                  <label class="field-label" for="wizard-contact-name">{{ 'wizard.contactName' | translate }}</label>
+                  <input
+                    id="wizard-contact-name"
+                    type="text"
+                    formControlName="contactName"
+                    class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label class="field-label" for="wizard-contact-email">{{ 'wizard.contactEmail' | translate }}</label>
+                  <input
+                    id="wizard-contact-email"
+                    type="email"
+                    formControlName="contactEmail"
+                    class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none"
+                  />
+                  @if (form.controls.contactEmail.touched && form.controls.contactEmail.invalid) {
+                    <p class="field-error">{{ 'validation.email' | translate }}</p>
+                  }
+                </div>
+                <div>
+                  <label class="field-label" for="wizard-contact-phone">{{ 'wizard.contactPhone' | translate }}</label>
+                  <input
+                    id="wizard-contact-phone"
+                    type="tel"
+                    formControlName="contactPhone"
+                    class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div class="border-t border-line pt-5">
+                <p class="text-[12px] font-bold uppercase tracking-wide text-muted">{{ 'wizard.seoSection' | translate }}</p>
+                <div class="mt-3 space-y-3">
+                  <div class="grid gap-4 lg:grid-cols-3">
+                    <div>
+                      <label class="field-label" for="wizard-meta-title-ka">{{ 'wizard.metaTitle' | translate }} (KA)</label>
+                      <input id="wizard-meta-title-ka" type="text" formControlName="metaTitleKa" maxlength="80" class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none" />
+                    </div>
+                    <div>
+                      <label class="field-label" for="wizard-meta-title-en">{{ 'wizard.metaTitle' | translate }} (EN)</label>
+                      <input id="wizard-meta-title-en" type="text" formControlName="metaTitleEn" maxlength="80" class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none" />
+                    </div>
+                    <div>
+                      <label class="field-label" for="wizard-meta-title-ru">{{ 'wizard.metaTitle' | translate }} (RU)</label>
+                      <input id="wizard-meta-title-ru" type="text" formControlName="metaTitleRu" maxlength="80" class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none" />
+                    </div>
+                  </div>
+                  <div class="grid gap-4 lg:grid-cols-3">
+                    <div>
+                      <label class="field-label" for="wizard-meta-desc-ka">{{ 'wizard.metaDescription' | translate }} (KA)</label>
+                      <textarea id="wizard-meta-desc-ka" rows="2" formControlName="metaDescriptionKa" maxlength="180" class="w-full resize-y rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none"></textarea>
+                    </div>
+                    <div>
+                      <label class="field-label" for="wizard-meta-desc-en">{{ 'wizard.metaDescription' | translate }} (EN)</label>
+                      <textarea id="wizard-meta-desc-en" rows="2" formControlName="metaDescriptionEn" maxlength="180" class="w-full resize-y rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none"></textarea>
+                    </div>
+                    <div>
+                      <label class="field-label" for="wizard-meta-desc-ru">{{ 'wizard.metaDescription' | translate }} (RU)</label>
+                      <textarea id="wizard-meta-desc-ru" rows="2" formControlName="metaDescriptionRu" maxlength="180" class="w-full resize-y rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none"></textarea>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <label class="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-line px-4 py-3">
+                <span>
+                  <span class="block text-[13px] font-semibold text-ink">{{ 'wizard.featured' | translate }}</span>
+                  <span class="mt-0.5 block text-[11px] text-muted">{{ 'misc.featured' | translate }}</span>
+                </span>
+                <input
+                  type="checkbox"
+                  class="h-4 w-4 accent-brand"
+                  [checked]="form.controls.isFeatured.value"
+                  (change)="toggleControl('isFeatured', $event)"
+                />
+              </label>
+            </div>
+          }
+
+          @case (5) {
+            <div class="space-y-6">
+              <p class="text-sm text-muted">{{ 'wizard.reviewText' | translate }}</p>
+
+              <div class="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
+                <div class="space-y-4">
+                  <div class="overflow-hidden rounded-xl border border-line">
+                    <div class="aspect-[16/7] bg-surface-2">
+                      @if (coverImage()?.url) {
+                        <img [src]="coverImage()?.url ?? ''" alt="" class="h-full w-full object-cover" />
+                      } @else {
+                        <div class="grid h-full place-items-center bg-gradient-to-br from-brand-800 via-brand-700 to-brand-900 text-5xl text-white/25" aria-hidden="true">♞</div>
+                      }
+                    </div>
+                    <div class="p-4">
+                      <p class="text-[10px] font-bold uppercase tracking-wide text-brand">{{ categoryName() }}</p>
+                      <h3 class="mt-1 text-lg font-bold text-ink">{{ titleValue() }}</h3>
+                      <p class="mt-1 text-[12px] text-muted">
+                        {{ selectedTypeLabel() }} <span aria-hidden="true">·</span> {{ selectedFormatLabel() }}
+                      </p>
+                      <dl class="mt-4 grid grid-cols-2 gap-3 text-[12px]">
+                        <div>
+                          <dt class="text-muted">{{ 'wizard.startDate' | translate }}</dt>
+                          <dd class="mt-0.5 font-semibold text-ink">{{ form.controls.startDate.value | localDate: 'datetime' }}</dd>
+                        </div>
+                        <div>
+                          <dt class="text-muted">{{ 'wizard.registrationDeadline' | translate }}</dt>
+                          <dd class="mt-0.5 font-semibold text-ink">{{ form.controls.registrationDeadline.value | localDate: 'datetime' }}</dd>
+                        </div>
+                        <div>
+                          <dt class="text-muted">{{ 'wizard.participantLimit' | translate }}</dt>
+                          <dd class="mt-0.5 font-semibold text-ink">{{ form.controls.participantLimit.value }}</dd>
+                        </div>
+                        <div>
+                          <dt class="text-muted">{{ 'wizard.entryFee' | translate }}</dt>
+                          <dd class="mt-0.5 font-semibold text-ink">
+                            @if (form.controls.entryFee.value && form.controls.entryFee.value > 0) {
+                              {{ form.controls.entryFee.value | money: form.controls.currency.value ?? 'GEL' }}
+                            } @else {
+                              {{ 'common.free' | translate }}
+                            }
+                          </dd>
+                        </div>
+                        <div class="col-span-2">
+                          <dt class="text-muted">{{ 'wizard.locationSection' | translate }}</dt>
+                          <dd class="mt-0.5 font-semibold text-ink">{{ locationText() }}</dd>
+                        </div>
+                      </dl>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="space-y-4">
+                  <div class="rounded-xl border border-line p-4">
+                    <p class="text-[12px] font-bold uppercase tracking-wide text-muted">{{ 'wizard.registrationSection' | translate }}</p>
+                    <ul class="mt-3 space-y-2 text-[12px] text-ink">
+                      <li class="flex items-center gap-2">
+                        <i class="pi pi-check-circle text-[11px] text-brand" aria-hidden="true"></i>
+                        {{ (form.controls.requiresApproval.value ? 'wizard.requiresApproval' : 'tournament.instantConfirmation') | translate }}
+                      </li>
+                      @if (form.controls.allowGuest.value) {
+                        <li class="flex items-center gap-2">
+                          <i class="pi pi-check-circle text-[11px] text-brand" aria-hidden="true"></i>
+                          {{ 'wizard.allowGuest' | translate }}
+                        </li>
+                      }
+                      @if (form.controls.allowWaitlist.value) {
+                        <li class="flex items-center gap-2">
+                          <i class="pi pi-check-circle text-[11px] text-brand" aria-hidden="true"></i>
+                          {{ 'wizard.allowWaitlist' | translate }}
+                        </li>
+                      }
+                      @if (form.controls.isOnline.value) {
+                        <li class="flex items-center gap-2">
+                          <i class="pi pi-globe text-[11px] text-brand" aria-hidden="true"></i>
+                          {{ 'wizard.isOnline' | translate }}
+                        </li>
+                      }
+                    </ul>
+                  </div>
+
+                  <div class="rounded-xl border border-line p-4">
+                    <p class="text-[12px] font-bold uppercase tracking-wide text-muted">{{ 'wizard.timeControl' | translate }}</p>
+                    <p class="mt-2 text-[12px] text-ink">
+                      {{ form.controls.initialMinutes.value }} + {{ form.controls.incrementSeconds.value }}
+                      <span aria-hidden="true">·</span>
+                      {{ 'wizard.rounds' | translate }}: {{ form.controls.rounds.value }}
+                    </p>
+                  </div>
+
+                  <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-brand/25 bg-brand-soft p-4">
+                    <input
+                      type="checkbox"
+                      class="mt-0.5 h-4 w-4 accent-brand"
+                      [checked]="form.controls.publishNow.value"
+                      (change)="toggleControl('publishNow', $event)"
+                    />
+                    <span>
+                      <span class="block text-[13px] font-semibold text-brand">{{ 'wizard.publishNow' | translate }}</span>
+                      <span class="mt-0.5 block text-[11px] text-brand/70">{{ 'wizard.publishHint' | translate }}</span>
+                    </span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          }
+        }
+      </div>
+
+      @if (stepError()) {
+        <p class="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-[12px] font-semibold text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">
+          {{ 'wizard.stepError' | translate }}
+        </p>
+      }
+
+      <div class="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <button
+          type="button"
+          class="inline-flex items-center justify-center gap-2 rounded-lg border border-line bg-surface px-4 py-2.5 text-[13px] font-semibold text-ink transition-colors hover:border-brand/40 hover:text-brand disabled:opacity-40"
+          [disabled]="step() === 0"
+          (click)="previous()"
+        >
+          <i class="pi pi-arrow-left text-[11px]" aria-hidden="true"></i>
+          {{ 'common.previous' | translate }}
+        </button>
+
+        <div class="flex flex-wrap items-center justify-end gap-2">
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-lg border border-line px-4 py-2.5 text-[13px] font-semibold text-muted transition-colors hover:text-ink disabled:opacity-60"
+            [disabled]="saving()"
+            (click)="save(true)"
+          >
+            {{ 'wizard.saveAndExit' | translate }}
+          </button>
+
+          @if (step() < steps.length - 1) {
+            <button
+              type="button"
+              class="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-brand-600"
+              (click)="next()"
+            >
+              {{ 'common.next' | translate }}
+              <i class="pi pi-arrow-right text-[11px]" aria-hidden="true"></i>
+            </button>
+          } @else {
+            <button
+              type="submit"
+              class="inline-flex items-center gap-2 rounded-lg bg-brand px-5 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-brand-600 disabled:opacity-60"
+              [disabled]="saving()"
+            >
+              @if (saving()) {
+                <i class="pi pi-spin pi-spinner text-xs" aria-hidden="true"></i>
+              } @else {
+                <i class="pi pi-send text-xs" aria-hidden="true"></i>
+              }
+              {{ (form.controls.publishNow.value ? 'common.publish' : (editMode() ? 'common.save' : 'common.saveDraft')) | translate }}
+            </button>
+          }
+        </div>
+      </div>
+    </form>
+  }
+</section>

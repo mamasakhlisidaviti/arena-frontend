@@ -1,0 +1,637 @@
+<section class="space-y-6">
+  <div>
+    <a
+      routerLink="/admin/tournaments"
+      class="inline-flex items-center gap-1.5 text-[12px] font-semibold text-muted transition-colors hover:text-brand"
+    >
+      <i class="pi pi-arrow-left text-[10px]" aria-hidden="true"></i>
+      {{ 'admin.tournamentsTitle' | translate }}
+    </a>
+  </div>
+
+  @if (tournamentError()) {
+    <div class="surface-card px-6 py-14 text-center">
+      <i class="pi pi-exclamation-triangle text-3xl text-rose-500" aria-hidden="true"></i>
+      <h1 class="mt-3 text-lg font-bold text-ink">{{ 'errors.loadFailed' | translate }}</h1>
+      <button
+        type="button"
+        class="mt-4 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-600"
+        (click)="loadTournament()"
+      >
+        {{ 'common.retry' | translate }}
+      </button>
+    </div>
+  } @else if (tournamentLoading() || !tournament()) {
+    <div class="surface-card animate-pulse p-6">
+      <div class="h-5 w-64 rounded bg-surface-2"></div>
+      <div class="mt-3 h-3 w-40 rounded bg-surface-2"></div>
+    </div>
+    <div class="surface-card h-72 animate-pulse"></div>
+  } @else {
+    @let item = tournament()!;
+
+    <header class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div class="min-w-0">
+        <div class="flex flex-wrap items-center gap-2">
+          <h1 class="text-2xl font-extrabold tracking-tight text-ink">{{ title() }}</h1>
+          <app-status-badge [status]="item.status" />
+          @if (item.isFeatured) {
+            <span class="rounded-full bg-gold-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-gold-600">
+              {{ 'misc.featured' | translate }}
+            </span>
+          }
+        </div>
+        <p class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">
+          <span>{{ item.startDate | localDate: 'datetime' }}</span>
+          <span aria-hidden="true">·</span>
+          <span>{{ categoryName() }}</span>
+          <span aria-hidden="true">·</span>
+          @if (item.isOnline) {
+            <span>{{ 'common.online' | translate }}</span>
+          } @else {
+            <span>{{ item.location.venue }}, {{ item.location.city }}</span>
+          }
+        </p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 rounded-lg border border-line bg-surface px-3.5 py-2.5 text-[13px] font-semibold text-ink transition-colors hover:border-brand/40 hover:text-brand disabled:opacity-60"
+          [disabled]="exportLoading()"
+          (click)="exportCsv()"
+        >
+          <i class="pi pi-download text-xs" [class.animate-bounce]="exportLoading()" aria-hidden="true"></i>
+          {{ 'admin.exportCsv' | translate }}
+        </button>
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 rounded-lg bg-brand px-3.5 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-brand-600"
+          (click)="openAdd()"
+        >
+          <i class="pi pi-user-plus text-xs" aria-hidden="true"></i>
+          {{ 'admin.addParticipant' | translate }}
+        </button>
+      </div>
+    </header>
+
+    <div class="surface-card flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex flex-1 items-center gap-3">
+        <div class="h-14 w-20 shrink-0 overflow-hidden rounded-lg bg-surface-2">
+          @if (item.coverImage?.url; as coverUrl) {
+            <img [src]="coverUrl" [alt]="title()" class="h-full w-full object-cover" loading="lazy" />
+          } @else {
+            <span class="grid h-full w-full place-items-center text-xl text-brand/40" aria-hidden="true">♞</span>
+          }
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center justify-between text-[11px] font-semibold text-muted">
+            <span>{{ 'common.capacity' | translate }}</span>
+            <span>{{ item.currentParticipants }} / {{ item.participantLimit }}</span>
+          </div>
+          <div class="mt-1.5 h-2 overflow-hidden rounded-full bg-surface-2">
+            <div class="h-full rounded-full bg-brand" [style.width.%]="fillPercent()"></div>
+          </div>
+          <div class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted">
+            <span>{{ 'wizard.entryFee' | translate }}:
+              <strong class="font-semibold text-ink">
+                @if (item.entryFee > 0) {
+                  {{ item.entryFee | money: item.currency }}
+                } @else {
+                  {{ 'common.free' | translate }}
+                }
+              </strong>
+            </span>
+            <span>{{ 'wizard.registrationDeadline' | translate }}:
+              <strong class="font-semibold text-ink">{{ item.registrationDeadline | localDate: 'date' }}</strong>
+            </span>
+            <span>{{ 'admin.pendingRegistrations' | translate }}:
+              <strong class="font-semibold text-ink">{{ counts().pending }}</strong>
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="flex shrink-0 flex-wrap items-center gap-2">
+        <a
+          [routerLink]="['/admin/tournaments', item.id, 'edit']"
+          class="inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-2 text-[12px] font-semibold text-ink transition-colors hover:border-brand/40 hover:text-brand"
+        >
+          <i class="pi pi-pen-to-square text-[11px]" aria-hidden="true"></i>
+          {{ 'common.edit' | translate }}
+        </a>
+        @if (item.status === 'published' || item.status === 'ongoing' || item.status === 'completed') {
+          <a
+            [routerLink]="['/tournaments', item.slug]"
+            class="inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-2 text-[12px] font-semibold text-ink transition-colors hover:border-brand/40 hover:text-brand"
+          >
+            <i class="pi pi-external-link text-[11px]" aria-hidden="true"></i>
+            {{ 'common.preview' | translate }}
+          </a>
+        }
+      </div>
+    </div>
+
+    <div class="flex gap-1.5 overflow-x-auto pb-1">
+      @for (tab of tabs; track tab) {
+        <button
+          type="button"
+          class="inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-[12px] font-semibold transition-colors"
+          [class]="
+            filterForm.controls.status.value === tab
+              ? 'border-brand bg-brand text-white'
+              : 'border-line bg-surface text-muted hover:border-brand/40 hover:text-ink'
+          "
+          (click)="filterByStatus(tab)"
+        >
+          {{ (tab ? 'status.' + tab : 'common.all') | translate }}
+          <span
+            class="rounded-full px-1.5 py-0.5 text-[10px] font-bold"
+            [class]="filterForm.controls.status.value === tab ? 'bg-white/20 text-white' : 'bg-surface-2 text-muted'"
+            >{{ countFor(tab) }}</span
+          >
+        </button>
+      }
+    </div>
+
+    <div class="surface-card flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+      <div class="relative flex-1">
+        <i
+          class="pi pi-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted"
+          aria-hidden="true"
+        ></i>
+        <input
+          type="search"
+          [formControl]="filterForm.controls.q"
+          [placeholder]="'admin.searchParticipants' | translate"
+          class="w-full rounded-lg border border-line bg-surface-2 py-2.5 pl-9 pr-3 text-sm text-ink outline-none placeholder:text-muted focus:border-brand/50"
+          [attr.aria-label]="'common.search' | translate"
+        />
+      </div>
+      <p-select
+        [formControl]="filterForm.controls.status"
+        [options]="statusOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [placeholder]="'admin.statusFilter' | translate"
+        [showClear]="true"
+        appendTo="body"
+        styleClass="w-full sm:w-48"
+      />
+      <button
+        type="button"
+        class="inline-flex items-center justify-center gap-1.5 rounded-lg border border-line px-3 py-2.5 text-[12px] font-semibold text-ink transition-colors hover:border-brand/40 hover:text-brand disabled:opacity-60"
+        [disabled]="loading()"
+        (click)="loadRegistrations(meta().page)"
+      >
+        <i class="pi pi-refresh text-[11px]" [class.animate-spin]="loading()" aria-hidden="true"></i>
+        {{ 'common.retry' | translate }}
+      </button>
+    </div>
+
+    @if (error()) {
+      <div class="surface-card px-6 py-12 text-center">
+        <p class="text-sm font-semibold text-ink">{{ 'errors.loadFailed' | translate }}</p>
+        <button
+          type="button"
+          class="mt-3 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-600"
+          (click)="loadRegistrations(meta().page)"
+        >
+          {{ 'common.retry' | translate }}
+        </button>
+      </div>
+    } @else if (loading() && registrations().length === 0) {
+      <div class="surface-card divide-y divide-line">
+        @for (row of [1, 2, 3, 4]; track row) {
+          <div class="flex animate-pulse items-center gap-3 p-4">
+            <div class="h-9 w-9 rounded-full bg-surface-2"></div>
+            <div class="flex-1 space-y-2">
+              <div class="h-3 w-1/4 rounded bg-surface-2"></div>
+              <div class="h-2.5 w-1/3 rounded bg-surface-2"></div>
+            </div>
+            <div class="h-6 w-20 rounded-full bg-surface-2"></div>
+          </div>
+        }
+      </div>
+    } @else if (registrations().length === 0) {
+      <div class="surface-card">
+        <app-empty-state
+          icon="pi pi-users"
+          titleKey="admin.participants"
+          textKey="admin.noParticipants"
+          actionKey="admin.addParticipant"
+          (action)="openAdd()"
+        />
+      </div>
+    } @else {
+      <div class="surface-card overflow-hidden" [class.opacity-60]="loading()">
+        <div class="hidden overflow-x-auto md:block">
+          <table class="w-full min-w-[52rem] text-left text-sm">
+            <thead class="border-b border-line bg-surface-2/60">
+              <tr class="text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
+                <th class="px-5 py-3 font-semibold">{{ 'admin.participant' | translate }}</th>
+                <th class="px-4 py-3 font-semibold">{{ 'form.rating' | translate }} / {{ 'form.fideId' | translate }}</th>
+                <th class="px-4 py-3 font-semibold">{{ 'admin.registered' | translate }}</th>
+                <th class="px-4 py-3 font-semibold">{{ 'common.status' | translate }}</th>
+                <th class="sticky right-0 z-10 border-l border-line bg-surface-2 px-5 py-3 text-right font-semibold">{{ 'common.actions' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-line">
+              @for (registration of registrations(); track registration.id) {
+                <tr class="cursor-pointer transition-colors hover:bg-surface-2/50" (click)="openDetail(registration)">
+                  <td class="px-5 py-3.5">
+                    <div class="flex items-center gap-3">
+                      <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-soft text-[11px] font-bold text-brand">
+                        {{ initials(registration) }}
+                      </span>
+                      <div class="min-w-0">
+                        <p class="truncate text-[13px] font-semibold text-ink">{{ participantName(registration) }}</p>
+                        <p class="truncate text-[11px] text-muted">{{ registration.participantInformation.email }}</p>
+                        <p class="truncate text-[11px] text-muted">{{ registration.participantInformation.phone }}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-4 py-3.5">
+                    <p class="text-[13px] font-medium text-ink">{{ registration.participantInformation.rating ?? '—' }}</p>
+                    <p class="text-[11px] text-muted">
+                      {{ registration.participantInformation.fideId || '—' }}
+                      @if (registration.participantInformation.club) {
+                        <span aria-hidden="true">·</span> {{ registration.participantInformation.club }}
+                      }
+                    </p>
+                  </td>
+                  <td class="px-4 py-3.5">
+                    <p class="text-[12px] font-medium text-ink">{{ registration.createdAt | localDate: 'date' }}</p>
+                    <p class="text-[11px] text-muted">{{ registration.registrationNumber }}</p>
+                  </td>
+                  <td class="px-4 py-3.5"><app-status-badge [status]="registration.status" /></td>
+                  <td class="sticky right-0 border-l border-line bg-surface px-5 py-3.5" (click)="$event.stopPropagation()">
+                    <div class="flex items-center justify-end gap-1">
+                      @if (canApprove(registration)) {
+                        <button
+                          type="button"
+                          class="grid h-8 w-8 place-items-center rounded-lg text-muted transition-colors hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-950/40"
+                          [title]="'admin.approve' | translate"
+                          [attr.aria-label]="'admin.approve' | translate"
+                          (click)="approve(registration)"
+                        >
+                          <i class="pi pi-check text-sm" aria-hidden="true"></i>
+                        </button>
+                      }
+                      @if (canReject(registration)) {
+                        <button
+                          type="button"
+                          class="grid h-8 w-8 place-items-center rounded-lg text-muted transition-colors hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40"
+                          [title]="'admin.reject' | translate"
+                          [attr.aria-label]="'admin.reject' | translate"
+                          (click)="reject(registration)"
+                        >
+                          <i class="pi pi-times text-sm" aria-hidden="true"></i>
+                        </button>
+                      }
+                      @if (canCancel(registration)) {
+                        <button
+                          type="button"
+                          class="grid h-8 w-8 place-items-center rounded-lg text-muted transition-colors hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-950/40"
+                          [title]="'admin.cancel' | translate"
+                          [attr.aria-label]="'admin.cancel' | translate"
+                          (click)="cancel(registration)"
+                        >
+                          <i class="pi pi-ban text-sm" aria-hidden="true"></i>
+                        </button>
+                      }
+                      <button
+                        type="button"
+                        class="grid h-8 w-8 place-items-center rounded-lg text-muted transition-colors hover:bg-surface-2 hover:text-brand"
+                        [title]="'common.viewDetails' | translate"
+                        [attr.aria-label]="'common.viewDetails' | translate"
+                        (click)="openDetail(registration)"
+                      >
+                        <i class="pi pi-eye text-sm" aria-hidden="true"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <ul class="divide-y divide-line md:hidden">
+          @for (registration of registrations(); track registration.id) {
+            <li class="p-4" (click)="openDetail(registration)">
+              <div class="flex items-start gap-3">
+                <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-soft text-[11px] font-bold text-brand">
+                  {{ initials(registration) }}
+                </span>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-start justify-between gap-2">
+                    <p class="truncate text-[13px] font-semibold text-ink">{{ participantName(registration) }}</p>
+                    <app-status-badge [status]="registration.status" />
+                  </div>
+                  <p class="truncate text-[11px] text-muted">{{ registration.participantInformation.email }}</p>
+                  <p class="mt-1 text-[11px] text-muted">
+                    {{ registration.createdAt | localDate: 'date' }}
+                    <span aria-hidden="true">·</span>
+                    {{ registration.registrationNumber }}
+                  </p>
+                </div>
+              </div>
+              <div class="mt-3 flex items-center gap-2 border-t border-line pt-3" (click)="$event.stopPropagation()">
+                @if (canApprove(registration)) {
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1.5 rounded-lg border border-line px-2.5 py-1.5 text-[11px] font-semibold text-emerald-700 hover:border-emerald-300 dark:text-emerald-300"
+                    (click)="approve(registration)"
+                  >
+                    <i class="pi pi-check text-[10px]" aria-hidden="true"></i>
+                    {{ 'admin.approve' | translate }}
+                  </button>
+                }
+                @if (canReject(registration)) {
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1.5 rounded-lg border border-line px-2.5 py-1.5 text-[11px] font-semibold text-rose-700 hover:border-rose-300 dark:text-rose-300"
+                    (click)="reject(registration)"
+                  >
+                    <i class="pi pi-times text-[10px]" aria-hidden="true"></i>
+                    {{ 'admin.reject' | translate }}
+                  </button>
+                }
+                <button
+                  type="button"
+                  class="ml-auto grid h-8 w-8 place-items-center rounded-lg text-muted hover:bg-surface-2 hover:text-brand"
+                  [attr.aria-label]="'common.viewDetails' | translate"
+                  (click)="openDetail(registration)"
+                >
+                  <i class="pi pi-eye text-sm" aria-hidden="true"></i>
+                </button>
+              </div>
+            </li>
+          }
+        </ul>
+      </div>
+
+      @if (meta().totalPages > 1) {
+        <div class="flex justify-center">
+          <p-paginator
+            [first]="(meta().page - 1) * meta().limit"
+            [rows]="meta().limit"
+            [totalRecords]="meta().total"
+            [pageLinkSize]="5"
+            (onPageChange)="onPage($event)"
+          />
+        </div>
+      }
+    }
+  }
+</section>
+
+<p-dialog
+  [visible]="addOpen()"
+  (visibleChange)="addOpen.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '42rem', maxWidth: '94vw' }"
+  [header]="'admin.manualAdd' | translate"
+>
+  <form [formGroup]="addForm" (ngSubmit)="submitAdd()" class="space-y-4">
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <label class="field-label" for="add-first">{{ 'form.firstName' | translate }}</label>
+        <input
+          id="add-first"
+          type="text"
+          formControlName="firstName"
+          class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none"
+        />
+        @if (addForm.controls.firstName.touched && addForm.controls.firstName.invalid) {
+          <p class="field-error">{{ 'validation.required' | translate }}</p>
+        }
+      </div>
+      <div>
+        <label class="field-label" for="add-last">{{ 'form.lastName' | translate }}</label>
+        <input
+          id="add-last"
+          type="text"
+          formControlName="lastName"
+          class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none"
+        />
+        @if (addForm.controls.lastName.touched && addForm.controls.lastName.invalid) {
+          <p class="field-error">{{ 'validation.required' | translate }}</p>
+        }
+      </div>
+    </div>
+
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <label class="field-label" for="add-email">{{ 'form.email' | translate }}</label>
+        <input
+          id="add-email"
+          type="email"
+          formControlName="email"
+          class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none"
+        />
+        @if (addForm.controls.email.touched && addForm.controls.email.invalid) {
+          <p class="field-error">
+            {{ (addForm.controls.email.hasError('required') ? 'validation.required' : 'validation.email') | translate }}
+          </p>
+        }
+      </div>
+      <div>
+        <label class="field-label" for="add-phone">{{ 'form.phone' | translate }}</label>
+        <input
+          id="add-phone"
+          type="tel"
+          formControlName="phone"
+          class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none"
+        />
+        @if (addForm.controls.phone.touched && addForm.controls.phone.invalid) {
+          <p class="field-error">{{ 'validation.phone' | translate }}</p>
+        }
+      </div>
+    </div>
+
+    <div class="grid gap-4 sm:grid-cols-3">
+      <div>
+        <label class="field-label" for="add-fide">{{ 'form.fideId' | translate }}</label>
+        <input
+          id="add-fide"
+          type="text"
+          inputmode="numeric"
+          formControlName="fideId"
+          class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none"
+        />
+        @if (addForm.controls.fideId.touched && addForm.controls.fideId.invalid) {
+          <p class="field-error">{{ 'form.invalidFide' | translate }}</p>
+        }
+      </div>
+      <div>
+        <label class="field-label" for="add-rating">{{ 'form.rating' | translate }}</label>
+        <input
+          id="add-rating"
+          type="number"
+          min="0"
+          max="4000"
+          formControlName="rating"
+          class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none"
+        />
+        @if (addForm.controls.rating.touched && addForm.controls.rating.invalid) {
+          <p class="field-error">{{ 'form.invalidRating' | translate }}</p>
+        }
+      </div>
+      <div>
+        <label class="field-label" for="add-club">{{ 'form.club' | translate }}</label>
+        <input
+          id="add-club"
+          type="text"
+          formControlName="club"
+          class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none"
+        />
+      </div>
+    </div>
+
+    <div>
+      <label class="field-label" for="add-notes">{{ 'admin.notes' | translate }}</label>
+      <textarea
+        id="add-notes"
+        rows="3"
+        formControlName="notes"
+        class="w-full resize-y rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none"
+      ></textarea>
+    </div>
+
+    <div class="flex items-center justify-end gap-2 border-t border-line pt-4">
+      <button
+        type="button"
+        class="rounded-lg border border-line px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-surface-2"
+        (click)="addOpen.set(false)"
+      >
+        {{ 'common.cancel' | translate }}
+      </button>
+      <button
+        type="submit"
+        class="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-600 disabled:opacity-60"
+        [disabled]="adding()"
+      >
+        @if (adding()) {
+          <i class="pi pi-spin pi-spinner text-xs" aria-hidden="true"></i>
+        }
+        {{ 'admin.addParticipant' | translate }}
+      </button>
+    </div>
+  </form>
+</p-dialog>
+
+<p-drawer
+  [visible]="detailOpen()"
+  (visibleChange)="onDetailVisible($event)"
+  position="right"
+  styleClass="w-full sm:w-[28rem]"
+  [header]="'admin.participant' | translate"
+  [ariaCloseLabel]="'common.close' | translate"
+>
+  @if (detail(); as registration) {
+    <div class="space-y-5">
+      <div class="flex items-start gap-3">
+        <span class="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-brand-soft text-sm font-bold text-brand">
+          {{ initials(registration) }}
+        </span>
+        <div class="min-w-0 flex-1">
+          <p class="text-base font-bold text-ink">{{ participantName(registration) }}</p>
+          <p class="text-[12px] text-muted">{{ registration.registrationNumber }}</p>
+          <div class="mt-2"><app-status-badge [status]="registration.status" /></div>
+        </div>
+      </div>
+
+      <dl class="space-y-2.5 rounded-xl border border-line bg-surface-2/60 p-4 text-[13px]">
+        <div class="flex items-start justify-between gap-3">
+          <dt class="text-muted">{{ 'form.email' | translate }}</dt>
+          <dd class="break-all text-right font-medium text-ink">{{ registration.participantInformation.email }}</dd>
+        </div>
+        <div class="flex items-start justify-between gap-3">
+          <dt class="text-muted">{{ 'form.phone' | translate }}</dt>
+          <dd class="text-right font-medium text-ink">{{ registration.participantInformation.phone }}</dd>
+        </div>
+        <div class="flex items-start justify-between gap-3">
+          <dt class="text-muted">{{ 'form.fideId' | translate }}</dt>
+          <dd class="text-right font-medium text-ink">{{ registration.participantInformation.fideId || '—' }}</dd>
+        </div>
+        <div class="flex items-start justify-between gap-3">
+          <dt class="text-muted">{{ 'form.rating' | translate }}</dt>
+          <dd class="text-right font-medium text-ink">{{ registration.participantInformation.rating ?? '—' }}</dd>
+        </div>
+        <div class="flex items-start justify-between gap-3">
+          <dt class="text-muted">{{ 'form.club' | translate }}</dt>
+          <dd class="text-right font-medium text-ink">{{ registration.participantInformation.club || '—' }}</dd>
+        </div>
+        <div class="flex items-start justify-between gap-3">
+          <dt class="text-muted">{{ 'admin.registered' | translate }}</dt>
+          <dd class="text-right font-medium text-ink">{{ registration.createdAt | localDate: 'datetime' }}</dd>
+        </div>
+        @if (registration.reviewedAt) {
+          <div class="flex items-start justify-between gap-3">
+            <dt class="text-muted">{{ 'admin.reviewed' | translate }}</dt>
+            <dd class="text-right font-medium text-ink">{{ registration.reviewedAt | localDate: 'datetime' }}</dd>
+          </div>
+        }
+      </dl>
+
+      @if (registration.notes) {
+        <div>
+          <p class="text-[11px] font-bold uppercase tracking-wide text-muted">{{ 'admin.notes' | translate }}</p>
+          <p class="mt-1 whitespace-pre-line rounded-xl border border-line p-3 text-[13px] leading-6 text-ink">
+            {{ registration.notes }}
+          </p>
+        </div>
+      }
+
+      @if (customFields(registration).length) {
+        <div>
+          <p class="text-[11px] font-bold uppercase tracking-wide text-muted">{{ 'form.additionalInfo' | translate }}</p>
+          <dl class="mt-2 space-y-2 rounded-xl border border-line p-3 text-[13px]">
+            @for (field of customFields(registration); track field.key) {
+              <div class="flex items-start justify-between gap-3">
+                <dt class="text-muted">{{ field.key }}</dt>
+                <dd class="text-right font-medium text-ink">{{ field.value }}</dd>
+              </div>
+            }
+          </dl>
+        </div>
+      }
+
+      <div class="flex flex-wrap gap-2 border-t border-line pt-4">
+        @if (canApprove(registration)) {
+          <button
+            type="button"
+            class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-[12px] font-semibold text-white hover:bg-emerald-700"
+            (click)="approve(registration)"
+          >
+            <i class="pi pi-check text-[11px]" aria-hidden="true"></i>
+            {{ 'admin.approve' | translate }}
+          </button>
+        }
+        @if (canReject(registration)) {
+          <button
+            type="button"
+            class="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 px-3.5 py-2 text-[12px] font-semibold text-rose-600 hover:bg-rose-50 dark:border-rose-900 dark:hover:bg-rose-950/40"
+            (click)="reject(registration)"
+          >
+            <i class="pi pi-times text-[11px]" aria-hidden="true"></i>
+            {{ 'admin.reject' | translate }}
+          </button>
+        }
+        @if (canCancel(registration)) {
+          <button
+            type="button"
+            class="inline-flex items-center gap-1.5 rounded-lg border border-line px-3.5 py-2 text-[12px] font-semibold text-muted hover:text-ink"
+            (click)="cancel(registration)"
+          >
+            <i class="pi pi-ban text-[11px]" aria-hidden="true"></i>
+            {{ 'admin.cancel' | translate }}
+          </button>
+        }
+      </div>
+    </div>
+  }
+</p-drawer>
