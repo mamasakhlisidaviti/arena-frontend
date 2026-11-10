@@ -47,6 +47,31 @@ describe('registrationAvailability', () => {
     expect(registrationAvailability(tournament, NOW)).toBe('closing_soon');
   });
 
+  it.each([
+    [0, 'closed'],
+    [1, 'closing_soon'],
+    [3 * DAY - 1, 'closing_soon'],
+    [3 * DAY, 'open'],
+    [3 * DAY + 1, 'open'],
+  ] as const)('uses strict deadline boundaries at an offset of %s ms', (offset, expected) => {
+    const tournament = makeTournament({
+      registrationDeadline: new Date(NOW.getTime() + offset).toISOString(),
+    });
+    expect(registrationAvailability(tournament, NOW)).toBe(expected);
+  });
+
+  it('prioritizes closed over full, and full over closing_soon', () => {
+    const full = makeTournament({
+      currentParticipants: 17,
+      registrationDeadline: new Date(NOW.getTime() + DAY).toISOString(),
+    });
+    expect(registrationAvailability(full, NOW)).toBe('full');
+    expect(registrationAvailability({ ...full, status: 'completed' }, NOW)).toBe('closed');
+    expect(
+      registrationAvailability({ ...full, registrationDeadline: NOW.toISOString() }, NOW),
+    ).toBe('closed');
+  });
+
   it('is closed after the deadline', () => {
     const tournament = makeTournament({
       registrationDeadline: new Date(NOW.getTime() - 1).toISOString(),

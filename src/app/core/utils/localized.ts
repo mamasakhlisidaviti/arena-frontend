@@ -1,5 +1,9 @@
+import { formatCurrency, formatDate as angularDate, formatNumber as angularNumber, getCurrencySymbol, registerLocaleData } from '@angular/common';
+import ka from '@angular/common/locales/ka';
 import type { LanguageCode, LocalizedString } from '../models/api.model';
 import { APP } from '../config/app.constants';
+
+registerLocaleData(ka);
 
 const FALLBACKS: LanguageCode[] = ['en', 'ka', 'ru'];
 
@@ -47,6 +51,10 @@ export function formatDate(
   if (Number.isNaN(date.getTime())) {
     return '—';
   }
+  if (language === 'ka') {
+    const formats = { date: 'd MMM y', datetime: 'd MMM y, HH:mm', time: 'HH:mm', long: 'd MMMM y' };
+    return angularDate(date, formats[style], 'ka');
+  }
   const options: Intl.DateTimeFormatOptions =
     style === 'time'
       ? { hour: '2-digit', minute: '2-digit' }
@@ -67,6 +75,10 @@ export function formatMoney(
   if (amount === null || amount === undefined) {
     return '';
   }
+  if (language === 'ka') {
+    const code = currency || 'GEL';
+    return formatCurrency(amount, 'ka', getCurrencySymbol(code, 'narrow', 'ka'), code, `1.0-${maximumFractionDigits}`);
+  }
   return new Intl.NumberFormat(intlLocale(language), {
     style: 'currency',
     currency: currency || 'GEL',
@@ -75,7 +87,9 @@ export function formatMoney(
 }
 
 export function formatNumber(value: number, language: LanguageCode): string {
-  return new Intl.NumberFormat(intlLocale(language)).format(value);
+  return language === 'ka'
+    ? angularNumber(value, 'ka')
+    : new Intl.NumberFormat(intlLocale(language)).format(value);
 }
 
 export function langCode(): LanguageCode {

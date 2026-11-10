@@ -1,15 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule, ValueChangeEvent } from '@angular/forms';
 import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 import { Store } from '@ngxs/store';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { debounceTime } from 'rxjs';
+import { debounce, filter, timer } from 'rxjs';
 import { Drawer } from 'primeng/drawer';
 import { Paginator, type PaginatorState } from 'primeng/paginator';
 import { APP } from '../../../core/config/app.constants';
 import type { GameCategory } from '../../../core/models/category.model';
-import type { TournamentStatus } from '../../../core/models/api.model';
 import type { TournamentListQuery } from '../../../core/models/tournament.model';
 import { LanguageService } from '../../../core/services/language.service';
 import { SeoService } from '../../../core/services/seo.service';
@@ -40,11 +39,11 @@ function isoDate(date: Date | null): string | undefined {
 }
 
 function parseDate(value: string | null): Date | null {
-  if (!value) {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     return null;
   }
   const date = new Date(`${value}T00:00:00`);
-  return Number.isNaN(date.getTime()) ? null : date;
+  return Number.isNaN(date.getTime()) || isoDate(date) !== value ? null : date;
 }
 
 @Component({
@@ -94,9 +93,11 @@ export class TournamentsPage {
 
   readonly showingFrom = computed(() => {
     const meta = this.meta();
-    return meta.total === 0 ? 0 : (meta.page - 1) * meta.limit + 1;
+    return this.items().length === 0 ? 0 : (meta.page - 1) * meta.limit + 1;
   });
-  readonly showingTo = computed(() => Math.min(this.meta().page * this.meta().limit, this.meta().total));
+  readonly showingTo = computed(() => this.items().length === 0
+    ? 0
+    : Math.min(this.meta().page * this.meta().limit, this.meta().total));
 
   readonly activeChips = computed<ActiveChip[]>(() => {
     this.language.lang();
@@ -164,12 +165,12 @@ export class TournamentsPage {
   constructor() {
     this.store.dispatch(new LoadCategories()).subscribe({ error: () => undefined });
 
-    const initialQuery = this.fromParams(this.route.snapshot.queryParamMap);
+    const initialQuery = parseTournamentParams(this.route.snapshot.queryParamMap);
     this.patchForm(initialQuery);
     this.store.dispatch(new LoadPublicTournaments(initialQuery)).subscribe({ error: () => undefined });
 
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
-      const query = this.fromParams(params);
+      const query = parseTournamentParams(params);
       this.patchForm(query);
       const current = this.store.selectSnapshot(TournamentState.query);
       if (!sameQuery(current, query)) {
@@ -177,8 +178,16 @@ export class TournamentsPage {
       }
     });
 
-    this.filterForm.valueChanges
-      .pipe(debounceTime(APP.debounceMs), takeUntilDestroyed())
+    this.filterForm.events
+      .pipe(
+        filter((event) => event instanceof ValueChangeEvent),
+        debounce((event) => timer(
+          event.source === this.filterForm.controls.q || event.source === this.filterForm.controls.city
+            ? APP.debounceMs
+            : 0,
+        )),
+        takeUntilDestroyed(),
+      )
       .subscribe(() => this.applyFilters());
 
     effect(() => {
@@ -201,7 +210,7 @@ export class TournamentsPage {
   }
 
   toggleCategory(slug: string): void {
-    const selected = this.query().category === slug ? '' : slug;
+    const selected = this.filterForm.controls.category.value === slug ? '' : slug;
     this.filterForm.controls.category.setValue(selected);
   }
 
@@ -238,6 +247,7 @@ export class TournamentsPage {
   }
 
   closeFilters(): void {
+    this.applyFilters();
     this.mobileFiltersOpen.set(false);
   }
 
@@ -263,24 +273,6 @@ export class TournamentsPage {
     };
   }
 
-  private fromParams(params: ParamMap): TournamentListQuery {
-    return {
-      page: Number(params.get('page')) > 0 ? Number(params.get('page')) : 1,
-      limit: APP.pageSize,
-      q: params.get('q') ?? undefined,
-      category: params.get('category') ?? undefined,
-      status: (params.get('status') as TournamentStatus | null) ?? undefined,
-      registrationStatus:
-        (params.get('registrationStatus') as TournamentListQuery['registrationStatus']) ?? undefined,
-      dateFrom: params.get('dateFrom') ?? undefined,
-      dateTo: params.get('dateTo') ?? undefined,
-      online: (params.get('online') as 'true' | 'false' | null) ?? undefined,
-      city: params.get('city') ?? undefined,
-      fee: (params.get('fee') as 'free' | 'paid' | null) ?? undefined,
-      sort: (params.get('sort') as TournamentListQuery['sort']) ?? 'upcoming',
-    };
-  }
-
   private patchForm(query: TournamentListQuery): void {
     this.filterForm.patchValue(
       {
@@ -298,6 +290,33 @@ export class TournamentsPage {
       { emitEvent: false },
     );
   }
+}
+
+export function parseTournamentParams(params: ParamMap): TournamentListQuery {
+  const option = <T extends string>(key: string, values: readonly T[]): T | undefined => {
+    const value = params.get(key);
+    return values.find((candidate) => candidate === value);
+  };
+  const page = Number(params.get('page'));
+  let dateFrom = isoDate(parseDate(params.get('dateFrom')));
+  let dateTo = isoDate(parseDate(params.get('dateTo')));
+  if (dateFrom && dateTo && dateFrom > dateTo) {
+    [dateFrom, dateTo] = [dateTo, dateFrom];
+  }
+  return {
+    page: Number.isInteger(page) && page > 0 && page <= 10000 ? page : 1,
+    limit: APP.pageSize,
+    q: params.get('q')?.trim().slice(0, 120) || undefined,
+    category: params.get('category')?.trim().slice(0, 80) || undefined,
+    status: option('status', ['published', 'ongoing', 'completed'] as const),
+    registrationStatus: option('registrationStatus', ['open', 'closing_soon', 'full', 'closed'] as const),
+    dateFrom,
+    dateTo,
+    online: option('online', ['true', 'false'] as const),
+    city: params.get('city')?.trim().slice(0, 120) || undefined,
+    fee: option('fee', ['free', 'paid'] as const),
+    sort: option('sort', ['newest', 'oldest', 'upcoming', 'deadline', 'popular'] as const) ?? 'upcoming',
+  };
 }
 
 function sameQuery(a: TournamentListQuery, b: TournamentListQuery): boolean {

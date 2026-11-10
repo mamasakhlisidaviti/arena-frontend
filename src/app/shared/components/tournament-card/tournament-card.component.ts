@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import type { Tournament } from '../../../core/models/tournament.model';
@@ -37,13 +37,14 @@ import { StatusBadgeComponent } from '../status-badge/status-badge.component';
         class="relative block aspect-[16/9] overflow-hidden bg-surface-2"
         [attr.aria-label]="title()"
       >
-        @if (coverUrl()) {
+        @if (coverUrl() && failedCover() !== coverUrl()) {
           <img
             [src]="coverUrl()"
             [alt]="title()"
             class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
             loading="lazy"
             decoding="async"
+            (error)="failedCover.set(coverUrl())"
           />
         } @else {
           <div
@@ -86,7 +87,7 @@ import { StatusBadgeComponent } from '../status-badge/status-badge.component';
           }
         </div>
 
-        <h3 class="text-[1.05rem] font-bold leading-snug text-ink">
+        <h3 class="break-words text-[1.05rem] font-bold leading-snug text-ink">
           <a
             [routerLink]="['/tournaments', tournament().slug]"
             class="transition-colors hover:text-brand"
@@ -111,7 +112,7 @@ import { StatusBadgeComponent } from '../status-badge/status-badge.component';
         </div>
 
         <div class="mt-auto space-y-1.5">
-          <div class="flex items-center justify-between text-[11px] font-medium text-muted">
+          <div class="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-[11px] font-medium text-muted">
             <span>{{ tournament().currentParticipants }} / {{ tournament().participantLimit }} {{ 'common.participants' | translate }}</span>
             <span>{{ 'tournament.seatsLeft' | translate: { count: remaining() } }}</span>
           </div>
@@ -161,6 +162,7 @@ export class TournamentCardComponent {
   private readonly language = inject(LanguageService);
 
   readonly tournament = input.required<Tournament>();
+  readonly failedCover = signal('');
 
   readonly title = computed(() =>
     localizedValue(this.tournament().title, this.language.lang()) || this.tournament().slug,

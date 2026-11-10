@@ -197,7 +197,7 @@ export class TournamentState {
     return state.lastSaved;
   }
 
-  @Action(LoadPublicTournaments)
+  @Action(LoadPublicTournaments, { cancelUncompleted: true })
   loadPublic(ctx: StateContext<TournamentStateModel>, action: LoadPublicTournaments) {
     const query: TournamentListQuery = {
       page: 1,
@@ -217,7 +217,7 @@ export class TournamentState {
     );
   }
 
-  @Action(LoadTournament)
+  @Action(LoadTournament, { cancelUncompleted: true })
   loadDetail(ctx: StateContext<TournamentStateModel>, action: LoadTournament) {
     const current = ctx.getState().detail;
     if (!action.force && current?.slug === action.slug) {
@@ -250,7 +250,7 @@ export class TournamentState {
     );
   }
 
-  @Action(LoadAdminTournaments)
+  @Action(LoadAdminTournaments, { cancelUncompleted: true })
   loadAdmin(ctx: StateContext<TournamentStateModel>, action: LoadAdminTournaments) {
     const query: TournamentListQuery = {
       page: 1,

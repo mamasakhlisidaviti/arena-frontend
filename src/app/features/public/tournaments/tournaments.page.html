@@ -45,17 +45,19 @@
 <section class="container-page py-8 lg:py-10">
   <div class="grid gap-8 lg:grid-cols-[18rem_minmax(0,1fr)]">
     <aside class="hidden lg:block">
-      <div class="surface-card sticky top-24 p-5">
+      <div class="surface-card sticky top-24 max-h-[calc(100dvh-7rem)] overflow-y-auto p-5">
         <div class="mb-4 flex items-center justify-between">
           <h2 class="text-sm font-bold text-ink">{{ 'common.filters' | translate }}</h2>
           <i class="pi pi-sliders-h text-xs text-muted" aria-hidden="true"></i>
         </div>
-        <app-tournament-filters
-          ngSkipHydration
-          [form]="filterForm"
-          [categories]="categories()"
-          (reset)="clearFilters()"
-        />
+        @if (!mobileFiltersOpen()) {
+          <app-tournament-filters
+            ngSkipHydration
+            [form]="filterForm"
+            [categories]="categories()"
+            (reset)="clearFilters()"
+          />
+        }
       </div>
     </aside>
 
@@ -93,8 +95,8 @@
       @if (activeChips().length) {
         <div class="mt-4 flex flex-wrap items-center gap-2">
           @for (chip of activeChips(); track chip.key) {
-            <span class="inline-flex items-center gap-1.5 rounded-full border border-brand/25 bg-brand-soft px-2.5 py-1 text-[11px] font-semibold text-brand">
-              {{ chip.label }}
+            <span class="inline-flex max-w-full items-center gap-1.5 rounded-full border border-brand/25 bg-brand-soft px-2.5 py-1 text-[11px] font-semibold text-brand">
+              <span class="min-w-0 break-words">{{ chip.label }}</span>
               <button
                 type="button"
                 class="grid h-4 w-4 place-items-center rounded-full hover:bg-brand hover:text-white"
@@ -170,7 +172,7 @@
   <p-drawer
     [(visible)]="mobileFiltersOpen"
     position="right"
-    styleClass="w-[19rem] sm:w-[21rem]"
+    styleClass="w-[21rem] max-w-full"
     [header]="'tournaments.filterTitle' | translate"
     [showCloseIcon]="true"
     [ariaCloseLabel]="'common.close' | translate"

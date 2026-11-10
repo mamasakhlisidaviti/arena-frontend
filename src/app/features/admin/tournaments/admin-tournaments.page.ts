@@ -112,9 +112,9 @@ export class AdminTournamentsPage {
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
       this.filterForm.patchValue(
         {
-          q: params.get('q') ?? '',
-          status: (params.get('status') as TournamentStatus | null) ?? null,
-          category: params.get('category'),
+          q: params.get('q')?.trim().slice(0, 120) ?? '',
+          status: STATUS_VALUES.find((value) => value === params.get('status')) ?? null,
+          category: params.get('category')?.trim().slice(0, 80) || null,
         },
         { emitEvent: false },
       );

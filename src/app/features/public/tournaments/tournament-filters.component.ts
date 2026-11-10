@@ -36,6 +36,7 @@ interface FilterOption {
             id="filter-q"
             type="search"
             formControlName="q"
+            maxlength="120"
             class="w-full rounded-lg border border-line bg-surface py-2.5 pl-9 pr-3 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none"
             [placeholder]="'tournaments.searchPlaceholder' | translate"
           />
@@ -55,7 +56,7 @@ interface FilterOption {
         />
       </div>
 
-      <div class="grid grid-cols-2 gap-3">
+      <div class="grid grid-cols-1 gap-4">
         <div>
           <label class="field-label" for="filter-status">{{ 'tournaments.status' | translate }}</label>
           <p-select
@@ -82,14 +83,17 @@ interface FilterOption {
         </div>
       </div>
 
-      <div class="grid grid-cols-2 gap-3">
+      <div class="grid grid-cols-1 gap-4">
         <div>
           <label class="field-label" for="filter-from">{{ 'tournaments.dateFrom' | translate }}</label>
           <p-datepicker
             inputId="filter-from"
             formControlName="dateFrom"
+            [maxDate]="form().get('dateTo')?.value"
             [showIcon]="true"
             [showButtonBar]="true"
+            dateFormat="yy-mm-dd"
+            [readonlyInput]="true"
             [appendTo]="overlayTarget"
             [placeholder]="'tournaments.datePlaceholder' | translate"
           />
@@ -99,15 +103,18 @@ interface FilterOption {
           <p-datepicker
             inputId="filter-to"
             formControlName="dateTo"
+            [minDate]="form().get('dateFrom')?.value"
             [showIcon]="true"
             [showButtonBar]="true"
+            dateFormat="yy-mm-dd"
+            [readonlyInput]="true"
             [appendTo]="overlayTarget"
             [placeholder]="'tournaments.datePlaceholder' | translate"
           />
         </div>
       </div>
 
-      <div class="grid grid-cols-2 gap-3">
+      <div class="grid grid-cols-1 gap-4">
         <div>
           <label class="field-label" for="filter-mode">{{ 'tournaments.mode' | translate }}</label>
           <p-select
@@ -140,8 +147,9 @@ interface FilterOption {
           id="filter-city"
           type="text"
           formControlName="city"
+          maxlength="120"
           class="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand focus:outline-none"
-          placeholder="Tbilisi"
+          [placeholder]="'tournaments.city' | translate"
         />
       </div>
 
@@ -172,6 +180,11 @@ export class TournamentFiltersComponent {
   private readonly language = inject(LanguageService);
   private readonly translate = inject(TranslateService);
 
+  private label(key: string): string {
+    this.language.lang();
+    return this.translate.instant(key);
+  }
+
   readonly form = input.required<FormGroup>();
   readonly categories = input<GameCategory[]>([]);
   readonly reset = output<void>();
@@ -180,7 +193,7 @@ export class TournamentFiltersComponent {
   readonly overlayTarget = isPlatformBrowser(inject(PLATFORM_ID)) ? 'body' : 'self';
 
   readonly categoryOptions = computed<FilterOption[]>(() => [
-    { label: this.translate.instant('tournaments.allCategories'), value: '' },
+    { label: this.label('tournaments.allCategories'), value: '' },
     ...this.categories().map((category) => ({
       label: localizedValue(category.name, this.language.lang()),
       value: category.slug,
@@ -188,37 +201,37 @@ export class TournamentFiltersComponent {
   ]);
 
   readonly statusOptions = computed<FilterOption[]>(() => [
-    { label: this.translate.instant('tournaments.allStatuses'), value: '' },
-    { label: this.translate.instant('status.published'), value: 'published' },
-    { label: this.translate.instant('status.ongoing'), value: 'ongoing' },
-    { label: this.translate.instant('status.completed'), value: 'completed' },
+    { label: this.label('tournaments.allStatuses'), value: '' },
+    { label: this.label('status.published'), value: 'published' },
+    { label: this.label('status.ongoing'), value: 'ongoing' },
+    { label: this.label('status.completed'), value: 'completed' },
   ]);
 
   readonly registrationOptions = computed<FilterOption[]>(() => [
-    { label: this.translate.instant('common.all'), value: '' },
-    { label: this.translate.instant('tournaments.regOpen'), value: 'open' },
-    { label: this.translate.instant('tournaments.regClosingSoon'), value: 'closing_soon' },
-    { label: this.translate.instant('tournaments.regFull'), value: 'full' },
-    { label: this.translate.instant('tournaments.regClosed'), value: 'closed' },
+    { label: this.label('common.all'), value: '' },
+    { label: this.label('tournaments.regOpen'), value: 'open' },
+    { label: this.label('tournaments.regClosingSoon'), value: 'closing_soon' },
+    { label: this.label('tournaments.regFull'), value: 'full' },
+    { label: this.label('tournaments.regClosed'), value: 'closed' },
   ]);
 
   readonly modeOptions = computed<FilterOption[]>(() => [
-    { label: this.translate.instant('tournaments.allModes'), value: '' },
-    { label: this.translate.instant('common.online'), value: 'true' },
-    { label: this.translate.instant('common.offline'), value: 'false' },
+    { label: this.label('tournaments.allModes'), value: '' },
+    { label: this.label('common.online'), value: 'true' },
+    { label: this.label('common.offline'), value: 'false' },
   ]);
 
   readonly feeOptions = computed<FilterOption[]>(() => [
-    { label: this.translate.instant('tournaments.allFees'), value: '' },
-    { label: this.translate.instant('common.free'), value: 'free' },
-    { label: this.translate.instant('common.paid'), value: 'paid' },
+    { label: this.label('tournaments.allFees'), value: '' },
+    { label: this.label('common.free'), value: 'free' },
+    { label: this.label('common.paid'), value: 'paid' },
   ]);
 
   readonly sortOptions = computed<FilterOption[]>(() => [
-    { label: this.translate.instant('tournaments.sortUpcoming'), value: 'upcoming' },
-    { label: this.translate.instant('tournaments.sortNewest'), value: 'newest' },
-    { label: this.translate.instant('tournaments.sortDeadline'), value: 'deadline' },
-    { label: this.translate.instant('tournaments.sortPopular'), value: 'popular' },
-    { label: this.translate.instant('tournaments.sortOldest'), value: 'oldest' },
+    { label: this.label('tournaments.sortUpcoming'), value: 'upcoming' },
+    { label: this.label('tournaments.sortNewest'), value: 'newest' },
+    { label: this.label('tournaments.sortDeadline'), value: 'deadline' },
+    { label: this.label('tournaments.sortPopular'), value: 'popular' },
+    { label: this.label('tournaments.sortOldest'), value: 'oldest' },
   ]);
 }

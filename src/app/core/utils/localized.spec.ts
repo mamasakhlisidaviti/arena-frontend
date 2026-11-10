@@ -33,6 +33,7 @@ describe('formatting helpers', () => {
   it('formats dates and guards invalid input', () => {
     const formatted = formatDate('2026-11-22T18:00:00.000Z', 'ka', 'long');
     expect(formatted).toContain('2026');
+    expect(formatted).toContain('ნოემბერი');
     expect(formatDate('not-a-date', 'ka')).toBe('—');
     expect(formatDate(null, 'ka')).toBe('—');
   });
@@ -40,6 +41,7 @@ describe('formatting helpers', () => {
   it('formats money with the requested currency', () => {
     const formatted = formatMoney(50, 'GEL', 'ka');
     expect(formatted).toContain('50');
+    expect(formatted).toContain('₾');
     expect(formatMoney(null, 'GEL', 'ka')).toBe('');
   });
 

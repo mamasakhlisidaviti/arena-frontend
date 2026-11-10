@@ -368,6 +368,7 @@
 .p-datepicker,
 .p-textarea {
   width: 100%;
+  min-width: 0;
 }
 
 .p-select-label,
